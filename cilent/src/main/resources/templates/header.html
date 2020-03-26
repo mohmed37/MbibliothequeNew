@@ -1,0 +1,89 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:background="http://www.w3.org/1999/xhtml"
+      xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <title>Mlibrairie</title>
+    <style>
+        body {
+
+            background-image:url(../static/css/css/photo/fond.jpg);
+        }
+
+        h1
+        {
+            color:#F8080C;
+            margin:40px 0 60px 0;
+            font-weight:300;
+        }
+
+
+        .our-team-main img
+        {
+            border-radius:50%;
+            margin-bottom:20px;
+            width: 150px;
+        }
+
+        .our-team-main h3
+        {
+            font-size:20px;
+            font-weight:700;
+        }
+
+        .our-team-main p
+        {
+            margin-bottom:0;
+        }
+
+        .our-team-main:hover .team-front
+        {
+            bottom:-200px;
+            transition: all 0.5s ease;
+        }
+
+    </style>
+
+</head>
+<body>
+<div class="container-fluid "  th:fragment="header">
+
+    <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+        <a class="navbar-brand" href="/">Accueil</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+
+            <ul class="navbar-nav">
+                <div sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_USER')">
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="window.location.href='userLocation'; return false;">Mon Compte</a>
+                    </li>
+                </div>
+                <div sec:authorize="hasRole('ROLE_ADMIN')">
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="window.location.href='form'; return false;">Nouveau livre</a>
+                    </li>
+                </div>
+                <li class="navbar-right">
+                    <button class="btn btn-danger" onclick="window.location.href='login'; return false;">Me connecter</button>
+                </li>
+
+            </ul>
+
+            </ul>
+        </div>
+        <div style="background-color:#ffffff" >
+            <img  th:src="@{getPhoto(id=100)}" class="img" style="width: 120px;" />
+        </div>
+    </nav>
+
+</div>
+
+
+</body>
+</html>

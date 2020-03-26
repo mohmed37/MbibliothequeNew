@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="../static/css/css/photo/myStyle.css"/>
+    <title>Title</title>
+
+
+</head>
+<style>
+    body {
+
+        background-image:url(../static/css/css/photo/fond.jpg);
+    }
+
+    .user-row {
+        margin-bottom: 14px;
+    }
+
+    .user-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .dropdown-user {
+        margin: 13px 0;
+        padding: 5px;
+        height: 100%;
+    }
+
+    .dropdown-user:hover {
+        cursor: pointer;
+    }
+
+    .table-user-information > tbody > tr {
+        border-top: 1px solid rgb(221, 221, 221);
+    }
+
+    .table-user-information > tbody > tr:first-child {
+        border-top: 0;
+    }
+
+
+    .table-user-information > tbody > tr > td {
+        border-top: 0;
+    }
+    .toppad
+    {margin-top:20px;
+    }
+    h2
+    {
+        color:#F8080C;
+    }
+
+</style>
+<body>
+<div th:insert="header.html :: header"></div></br>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12 ">
+
+            <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6 col-xs-offset-0 col-sm-offset-0 col-md-offset-3 col-lg-offset-3 toppad" >
+
+
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <h2>Mes informations</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class=" col-md-9 col-lg-9 ">
+                                <table class="table table-striped">
+                                    <tbody class="thead-light">
+                                    <tr>
+                                        <td>Prénom:</td>
+                                        <td th:text="${userConnect.prenom}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Non:</td>
+                                        <td th:text="${userConnect.nom}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Téléphone:</td>
+                                        <td th:text="${userConnect.phone}"></td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>Date d'inscription:</td>
+                                        <td th:text="${userConnect.getDateCreatedString(userConnect.date)}"></td>
+                                    </tr>
+                                    <tr>
+                                        <td>E-Mail:</td>
+                                        <td th:text="${userConnect.email}"><a href="mailto:info@support.com"></a></td>
+                                    </tr>
+
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div></br>
+
+<div class="container">
+    <div class="row">
+        <h2>Liste des livres</h2></br>
+        <table class="table table-striped">
+            <thead class="thead-light">
+            <tr>
+                <th>Titre</th>
+                <th>Date d'emprunt </th>
+                <th>Date de restitution</th>
+                <th>Prolongation</th>
+
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="livrelocation : ${livresLocation}" class="col-xs-12 col-sm-12 col-md-6 col-lg-6 col-xs-offset-0 col-sm-offset-0 col-md-offset-3 col-lg-offset-3 toppad">
+
+                <td th:text="${livrelocation.getLibrairie().titre}"></td>
+                <td th:text="${livrelocation.getDateCreatedString(livrelocation.dateDeb)}" ></td>
+                <td th:text="${livrelocation.getDateCreatedString(livrelocation.dateFin)}"></td>
+                <td><a  th:if="${dateJour.before(livrelocation.dateFin) && livrelocation.getProlongation()==false} "
+                        th:href="@{prolongation(id=${livrelocation.id})}">Prolongation</a></td>
+            </tr>
+
+            </tbody>
+
+        </table>
+    </div>
+</div></br>
+<div th:insert="footer.html :: footer"></div>
+</body>
+</html>
