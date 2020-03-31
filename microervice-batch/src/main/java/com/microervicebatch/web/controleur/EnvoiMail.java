@@ -30,7 +30,7 @@ public class EnvoiMail {
     /**
      * envoi du mail de relance en automatique.
      */
-    @Scheduled(cron = "0  33 17 * * * ")
+    @Scheduled(cron = "0  33 19 * * * ")
     public void sendEmail() {
 
         SimpleDateFormat formater = null;

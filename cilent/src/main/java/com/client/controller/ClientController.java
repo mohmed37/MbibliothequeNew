@@ -54,7 +54,7 @@ public class ClientController {
                           @RequestParam(name = "motClefTitre",defaultValue ="") String motClefTitre
             ,@RequestParam(name="page",defaultValue = "0")int page,
                           @RequestParam(name="size",defaultValue = "8")int size) {
-        log.info("Envoi requête vers microservice-librairie");
+        log.info("Envoi requête vers microservice-produits");
         LibraryResponse pageLivres = mlibrairieProxy.listDesLivres( motClefAuteur,motClefTitre,page,size);
         int pagesCount1=pageLivres.getContent().size();
         int[]pages=new int[pagesCount1];
