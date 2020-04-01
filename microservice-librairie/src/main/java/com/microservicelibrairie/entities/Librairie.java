@@ -37,6 +37,15 @@ public class Librairie implements Serializable {
     Integer nExemplaire;
 
     @NotNull
+    @Range(min=0, max=(20))
+    Integer prereserveMax;
+
+    @NotNull
+    @Range(min=0, max=(20))
+    Integer prereserve;
+
+
+    @NotNull
     String photo;
 
     @ManyToOne(fetch = FetchType.EAGER)

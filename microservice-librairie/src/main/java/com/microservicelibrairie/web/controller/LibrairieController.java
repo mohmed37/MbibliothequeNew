@@ -1,14 +1,8 @@
 package com.microservicelibrairie.web.controller;
 
 
-import com.microservicelibrairie.dao.GenresRepository;
-import com.microservicelibrairie.dao.LibrairieRepository;
-import com.microservicelibrairie.dao.LivreRepository;
-import com.microservicelibrairie.dao.UserReservationDao;
-import com.microservicelibrairie.entities.Genre;
-import com.microservicelibrairie.entities.Librairie;
-import com.microservicelibrairie.entities.LivreReserve;
-import com.microservicelibrairie.entities.UserReservation;
+import com.microservicelibrairie.dao.*;
+import com.microservicelibrairie.entities.*;
 import com.microservicelibrairie.web.exceptions.GenreNotFoundException;
 import com.microservicelibrairie.web.exceptions.ImpossibleAjouterUnLivreException;
 import com.microservicelibrairie.web.exceptions.ImpossibleAjouterUneReservationException;
@@ -36,6 +30,8 @@ public class LibrairieController {
     UserReservationDao userReservationDao;
     @Autowired
     GenresRepository genresRepository;
+    @Autowired
+    LivreReserveAttenteDao livreReserveAttenteDao;
 
 
     @Value("${dir.images}")
@@ -149,6 +145,8 @@ public class LibrairieController {
      */
     @PostMapping(value = "/librairies")
     public ResponseEntity<Librairie>saveLivre(@RequestBody Librairie livre){
+        livre.setPrereserveMax(livre.getNExemplaire()*2);
+        livre.setPrereserve(0);
         Librairie saveLivre = librairieRepository.save(livre);
         if(saveLivre == null) throw new ImpossibleAjouterUnLivreException("Impossible d'ajouter ce livre");
 
@@ -203,6 +201,19 @@ public class LibrairieController {
         livreRepository.save(livreReserve);
     }
 
+    @GetMapping(value = "/ChercheLocation")
+    public Boolean chercheLocation(@RequestParam(name = "num") long num,
+                                   @RequestParam(name = "idLivre") long idLivre) {
+        List<LivreReserve> livresLocation = livreRepository.findByIdClient(num);
+
+        for (int i = 0; i < livresLocation.size(); i++) {
+
+            if (livresLocation.get(i).getLibrairie().getId().equals(recupererUnLivre(idLivre))) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Enregistrer la reservation d'un livre
@@ -213,8 +224,8 @@ public class LibrairieController {
 
     @PostMapping(value ="saveReservation/{idLivre}/{idUser}" )
     public LivreReserve saveReservation(@RequestBody LivreReserve livreReserve, @PathVariable("idLivre") Long idLivre,
-                                        @PathVariable("idUser") Long idUser)
-    {
+                                        @PathVariable("idUser") Long idUser) {
+
         Librairie livre= recupererUnLivre(idLivre).get();
         if (livre.getNExemplaire()<=0)throw new ImpossibleAjouterUneReservationException("Ce livre n'est plus" +
                 " disponible");
@@ -234,6 +245,7 @@ public class LibrairieController {
                 userinscrit=true;
             }
         }
+
         if (userinscrit==false){
             UserReservation userReservation=new UserReservation();
             userReservation.setIdClient(idUser);
@@ -248,12 +260,11 @@ public class LibrairieController {
         livreReserve.setProlongation(false);
         livreReserve.setUserReservation(userReservation);
         livre.setNExemplaire(livre.getNExemplaire()-1);
-
         userReservation.setNbLivre(userReservation.getNbLivre()+1);
 
         return livreRepository.save(livreReserve);
-
     }
+
 
     /**
      * Supprimer la resevation d'un livre
@@ -273,13 +284,70 @@ public class LibrairieController {
         }
     }
 
+    @PostMapping(value ="savePreReservation/{idLivre}/{idUser}" )
+    public LivreReserveAttente savePreReservation(@RequestBody LivreReserveAttente livreReserveAttente, @PathVariable("idLivre") Long idLivre,
+                                                  @PathVariable("idUser") Long idUser) {
+
+        Librairie livre=recupererUnLivre(idLivre).get();
+
+        livreReserveAttente.setIdClient(idUser);
+        livreReserveAttente.setLibrairie(livre);
+        livreReserveAttente.setDateDemande(new Date());
+        livreReserveAttente.setNlistAttente(livre.getPrereserve()+1);
+        livre.setPrereserve(livre.getPrereserve()+1);
+
+        return livreReserveAttenteDao.save(livreReserveAttente);
+
+    }
+
+    /**
+     * Supprimer la Pre-resevation d'un livre
+     * @param id da la Pre-reservation.
+     */
+    @DeleteMapping (value ="deletePreReservation/{id}" )
+    public void deletePreReservation(@PathVariable("id") Long id) {
+       LivreReserveAttente livreReserveAttente=livreAttente(id).get();
+       livreReserveAttente.getLibrairie().setPrereserve(livreReserveAttente.getLibrairie().getPrereserve()-1);
+       livreReserveAttenteDao.delete(livreReserveAttente);
 
 
+      List<LivreReserveAttente> list=livreReserveAttenteDao.findAll();
+
+        for (int i =0; i < list.size(); i++){
+            LivreReserveAttente attenteList=list.get(i);
+
+            if (attenteList.getLibrairie().equals(livreReserveAttente.getLibrairie())&
+                    livreReserveAttente.getNlistAttente()<attenteList.getNlistAttente()){
+                attenteList.setNlistAttente(attenteList.getNlistAttente()-1);
+                livreReserveAttenteDao.save(attenteList);
+            }
+        }
+
+    }
 
 
+    /**
+     * Rechercher un livre qui est en attente  par son Id.
+     * @param id  livre
+     */
 
+    @GetMapping(value = "/livreAttente")
+    public Optional<LivreReserveAttente>livreAttente(@RequestParam(name="id",defaultValue = " ")long id){
+        Optional<LivreReserveAttente>livre=livreReserveAttenteDao.findById(id);
+        if(!livre.isPresent()) throw new LivreNotFoundException("Ce livre n'existe pas");
+        return livre;
+    }
 
-
+    /**
+     * recherche des livres en location par utilisateur
+     * @param num
+     * @return
+     */
+    @GetMapping(value = "/livreAttenteClient")
+    public List<LivreReserveAttente> livreAttenteClient(@RequestParam(name = "num") long num){
+        List<LivreReserveAttente> livreAttenteClient=livreReserveAttenteDao.findByIdClient(num) ;
+        return livreAttenteClient;
+    }
 
 
 

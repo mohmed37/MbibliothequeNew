@@ -4,6 +4,7 @@ package com.client.proxies;
 
 import com.client.bean.GenreBean;
 import com.client.bean.LibrairieBean;
+import com.client.bean.LivreReserveAttenteBean;
 import com.client.bean.LivreReserveBean;
 import com.client.controller.LibraryResponse;
 import org.springframework.cloud.netflix.ribbon.RibbonClient;
@@ -67,6 +68,21 @@ public interface MlibrairieProxy {
 
  @GetMapping(value = "/microservice-librairie/genre/{id}")
  Optional<GenreBean> GenreLivre(@PathVariable("id") int id);
+
+
+ @PostMapping(value ="/microservice-librairie/savePreReservation/{idLivre}/{idUser}" )
+ LivreReserveAttenteBean savePreReservation(@RequestBody LivreReserveAttenteBean livreReserveAttente, @PathVariable("idLivre") Long idLivre,
+                                            @PathVariable("idUser") Long idUser);
+
+ @DeleteMapping (value ="/microservice-librairie/deletePreReservation/{id}" )
+ LivreReserveAttenteBean deletePreReservation(@PathVariable("id") Long id);
+
+ @GetMapping(value = "/microservice-librairie/livreAttente")
+ Optional<LivreReserveAttenteBean>livreAttente(@RequestParam(name="id",defaultValue = " ")long id);
+
+ @GetMapping(value = "/livreAttenteClient")
+ List<LivreReserveAttenteBean> livreAttenteClient(@RequestParam(name = "num") long num);
+
 
 }
 
