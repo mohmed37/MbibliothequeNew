@@ -14,7 +14,8 @@
     <li>microservice-batch: services contient les mails envoyés et l'automatisation des envois</li>
     <li>microservice-client: services web servant à l'affichage des données du site</li>
 </ul>
-
+   
+   
 ### Deploiement
 
 <ol>
