@@ -12,6 +12,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +26,12 @@ public interface MlibrairieProxy {
 
  @GetMapping(value = "/microservice-librairie/locationAll")
  List<LivreReserveBean> livreReservesAll();
+ @GetMapping(value = "/locationId")
+ Optional<LivreReserveBean> findByLocationId(@RequestParam(name = "id") long id);
+
+ @GetMapping(value = "/microservice-librairie/locationDteMax")
+ Date DateLocationMax(@RequestParam(name = "id") long id);
+
 
  @PutMapping(value = "/microservice-librairie/prolongation")
  LibrairieBean prolongation(@RequestParam(name = "id") long id);
@@ -70,9 +77,9 @@ public interface MlibrairieProxy {
  Optional<GenreBean> GenreLivre(@PathVariable("id") int id);
 
 
- @PostMapping(value ="/microservice-librairie/savePreReservation/{idLivre}/{idUser}" )
- LivreReserveAttenteBean savePreReservation(@RequestBody LivreReserveAttenteBean livreReserveAttente, @PathVariable("idLivre") Long idLivre,
-                                            @PathVariable("idUser") Long idUser);
+ @PostMapping(value ="/microservice-librairie/savePreReservation/{idLivre}" )
+ LivreReserveAttenteBean savePreReservation(@PathVariable("idLivre") Long idLivre,
+                                            @RequestParam(name = "idUser") Long idUser);
 
  @DeleteMapping (value ="/microservice-librairie/deletePreReservation/{id}" )
  LivreReserveAttenteBean deletePreReservation(@PathVariable("id") Long id);
@@ -80,7 +87,7 @@ public interface MlibrairieProxy {
  @GetMapping(value = "/microservice-librairie/livreAttente")
  Optional<LivreReserveAttenteBean>livreAttente(@RequestParam(name="id",defaultValue = " ")long id);
 
- @GetMapping(value = "/livreAttenteClient")
+ @GetMapping(value = "/microservice-librairie/livreAttenteClient")
  List<LivreReserveAttenteBean> livreAttenteClient(@RequestParam(name = "num") long num);
 
 

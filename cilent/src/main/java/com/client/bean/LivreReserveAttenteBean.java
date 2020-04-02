@@ -24,7 +24,7 @@ public class LivreReserveAttenteBean {
     Long idClient;
     Integer nlistAttente;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    Date dateDemande;
+    Date dateRetour;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     Date dateMail;
     Boolean mailEnvoye;
@@ -39,4 +39,6 @@ public class LivreReserveAttenteBean {
         DateFormat df = new SimpleDateFormat("dd/MM/yyyy");
         return df.format(date);
     }
+
+
 }

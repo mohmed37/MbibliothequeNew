@@ -15,6 +15,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotNull;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 
@@ -80,6 +83,26 @@ public class LibrairieController {
         List<LivreReserve> livresLocation=livreRepository.findByIdClient(num) ;
         return livresLocation;
     }
+
+    @GetMapping(value = "/locationDteMax")
+    public Date dateLocationMax(@RequestParam(name = "id") long id){
+        List<LivreReserve> livresLocation=livreRepository.findByLibrairie_Id(id) ;
+        Date dateMax = null;
+        Calendar cal1 = Calendar.getInstance();
+        Calendar cal2 = Calendar.getInstance();
+        for (int i =0; i < livresLocation.size(); i++){
+           LivreReserve newLivre= livresLocation.get(i);
+            dateMax =livresLocation.get(1).getDateFin();
+            cal2.setTime(newLivre.getDateFin());
+            cal1.setTime(dateMax);
+            cal1.add(Calendar.MONTH,3);
+            if(cal1.after(cal2)) {
+                dateMax=newLivre.getDateFin();
+            }
+        }
+        return dateMax;
+    }
+
 
     /**
      * Rechercher des livres par genre
@@ -284,15 +307,14 @@ public class LibrairieController {
         }
     }
 
-    @PostMapping(value ="savePreReservation/{idLivre}/{idUser}" )
-    public LivreReserveAttente savePreReservation(@RequestBody LivreReserveAttente livreReserveAttente, @PathVariable("idLivre") Long idLivre,
-                                                  @PathVariable("idUser") Long idUser) {
-
+    @PostMapping(value ="savePreReservation/{idLivre}" )
+    public LivreReserveAttente savePreReservation( @PathVariable("idLivre") Long idLivre,
+                                                   @RequestParam(name ="idUser") Long idUser) {
+        LivreReserveAttente livreReserveAttente=new LivreReserveAttente();
         Librairie livre=recupererUnLivre(idLivre).get();
-
         livreReserveAttente.setIdClient(idUser);
         livreReserveAttente.setLibrairie(livre);
-        livreReserveAttente.setDateDemande(new Date());
+        livreReserveAttente.setDateRetour(dateLocationMax(idLivre));
         livreReserveAttente.setNlistAttente(livre.getPrereserve()+1);
         livre.setPrereserve(livre.getPrereserve()+1);
 

@@ -32,7 +32,7 @@ public class LivreReserveAttente  implements Serializable {
 
     @NotNull
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    Date dateDemande;
+    Date dateRetour;
 
 
     @DateTimeFormat(pattern = "yyyy-MM-dd")
@@ -45,5 +45,6 @@ public class LivreReserveAttente  implements Serializable {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "livre_id")
     Librairie librairie;
+
 
 }

@@ -1,10 +1,7 @@
 package com.client.controller;
 
 
-import com.client.bean.GenreBean;
-import com.client.bean.LibrairieBean;
-import com.client.bean.LivreReserveBean;
-import com.client.bean.UserBean;
+import com.client.bean.*;
 import com.client.proxies.MlibrairieProxy;
 import com.client.proxies.MuserProxy;
 import com.client.service.IUserService;
@@ -24,6 +21,8 @@ import javax.validation.Valid;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -98,7 +97,13 @@ public class ClientController {
     public String detailLivre(Model model,@RequestParam(name="id",defaultValue = " ")long id){
         LibrairieBean detailLivre = mlibrairieProxy.recupererUnLivre(id);
         model.addAttribute("detailLivre",detailLivre);
+        Date dateRetour=mlibrairieProxy.DateLocationMax(id);
+        model.addAttribute("dateRetour",dateRetour);
+        UserBean userConnec=userService.getUserConnec();
+        model.addAttribute("userConnect",userConnec);
         return "detailLivre";
+
+
     }
 
 
@@ -114,6 +119,8 @@ public class ClientController {
 
         List<LivreReserveBean> livresLocation = mlibrairieProxy.findByLocation(userConnec.getNum());
         model.addAttribute("livresLocation", livresLocation);
+        List<LivreReserveAttenteBean> livreReserveAttenteBeanList=mlibrairieProxy.livreAttenteClient(userConnec.getNum());
+        model.addAttribute("livreAttentes",livreReserveAttenteBeanList);
 
         Date dateJour=new Date();
         model.addAttribute("dateJour",dateJour);
@@ -186,6 +193,20 @@ public class ClientController {
     public String prolongation(long id){
         mlibrairieProxy.prolongation(id);
 
+        return "redirect:/userLocation";
+    }
+
+    @RequestMapping(value ="/reservation/{idLivre}")
+    public String reservation(@PathVariable("idLivre") long idLivre){
+        UserBean idUser=userService.getUserConnec();
+        mlibrairieProxy.savePreReservation(idLivre,idUser.getNum());
+
+        return "redirect:/detailLivre?id="+idLivre;
+    }
+
+    @RequestMapping("/delete/{id}")
+    public String deleteUser(@PathVariable("id") long id) {
+        mlibrairieProxy.deletePreReservation(id);
         return "redirect:/userLocation";
     }
 
