@@ -18,6 +18,10 @@ public interface MlibrairieProxy {
  @GetMapping(value = "/microservice-librairie/location")
  List<LivreReserveBean> findByLocation(@RequestParam(name = "num") long num);
 
+
+ @DeleteMapping (value ="/microservice-librairie/{id}" )
+ void expiration48H(@PathVariable("id") Long id);
+
 }
 
 

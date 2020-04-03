@@ -204,11 +204,10 @@
                         <h6 class="price">Nombre de personne ayant réservé le livre:<span><p th:text="${detailLivre.getPrereserve()}"></span></h6>
                         <h6 class="price">Date de retour la plus proche:<span><p th:text="${detailLivre.getDateCreatedString(dateRetour)}"></span></h6></div>
                         <div sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_USER')">
-                        <a  th:if="${detailLivre.getNExemplaire()==0 && detailLivre.getPrereserveMax()>detailLivre.getPrereserve()&&detailLivre.getId().}"
+                        <a  th:if="${detailLivre.getNExemplaire()==0 && detailLivre.getPrereserveMax()>detailLivre.getPrereserve()}"
                             th:href="@{/reservation/{idLivre}(idLivre=${detailLivre.id})}">Réserver</a></div>
                         <h5 class="price">Auteur:</h5><h6><span><p th:text="${detailLivre.auteur}"> </span></h6>
-                        <h5 class="price">Résumé:</h5><h6><span><p th:text="${detailLivre.resume}"></span></h6>
-
+                       <h5 class="price">Résumé:</h5><h6><span><p th:text="${detailLivre.resume}"></span></h6>
 
                     </div>
                 </div>

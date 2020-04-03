@@ -101,6 +101,21 @@ public class ClientController {
         model.addAttribute("dateRetour",dateRetour);
         UserBean userConnec=userService.getUserConnec();
         model.addAttribute("userConnect",userConnec);
+
+
+
+      /*  Boolean livreattenteReserve = false;
+        model.addAttribute("livreattenteReserve", livreattenteReserve);
+       *//* List<LivreReserveAttenteBean> attenteBeanList=mlibrairieProxy.livreAttenteClient(userConnec.getNum());
+        for (int i = 0; i < attenteBeanList.size(); i++) {
+
+            if (attenteBeanList.get(i).getLibrairie().getId().equals(id)){
+                livreattenteReserve=true;
+
+            }
+
+        }*/
+
         return "detailLivre";
 
 

@@ -10,6 +10,10 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -118,4 +122,15 @@ public class EnvoiMail {
         return chaineAfficher;
     }
 
+
+    @Scheduled(cron = "0  33 19 * * * ")
+    public void expiration48H() {
+        long n=118;
+        mlibrairieProxy.expiration48H(n);
+
+    }
+
 }
+
+
+

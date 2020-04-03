@@ -1,6 +1,7 @@
 package com.microservicelibrairie.web.controller;
 
 
+
 import com.microservicelibrairie.dao.*;
 import com.microservicelibrairie.entities.*;
 import com.microservicelibrairie.web.exceptions.GenreNotFoundException;
@@ -68,9 +69,8 @@ public class LibrairieController {
                                          @RequestParam(name = "motClefAuteur",defaultValue ="") String motClefAuteur,
                                          @RequestParam(name = "motClefTitre",defaultValue ="") String motClefTitre)
     {
-        Page<Librairie>Pagelivres= librairieRepository.findByAuteurContainingIgnoreCaseAndTitreContainingIgnoreCase(
+        return librairieRepository.findByAuteurContainingIgnoreCaseAndTitreContainingIgnoreCase(
                 motClefAuteur,motClefTitre,PageRequest.of(page,size));
-        return Pagelivres;
     }
 
     /**
@@ -80,24 +80,23 @@ public class LibrairieController {
      */
     @GetMapping(value = "/location")
     public List<LivreReserve> findByLocation(@RequestParam(name = "num") long num){
-        List<LivreReserve> livresLocation=livreRepository.findByIdClient(num) ;
-        return livresLocation;
+        return livreRepository.findByIdClient(num);
     }
 
     @GetMapping(value = "/locationDteMax")
     public Date dateLocationMax(@RequestParam(name = "id") long id){
         List<LivreReserve> livresLocation=livreRepository.findByLibrairie_Id(id) ;
-        Date dateMax = null;
+        Date dateMax =null;
         Calendar cal1 = Calendar.getInstance();
         Calendar cal2 = Calendar.getInstance();
-        for (int i =0; i < livresLocation.size(); i++){
-           LivreReserve newLivre= livresLocation.get(i);
-            dateMax =livresLocation.get(1).getDateFin();
+
+        for (LivreReserve newLivre : livresLocation) {
+            dateMax = livresLocation.get(0).getDateFin();
             cal2.setTime(newLivre.getDateFin());
             cal1.setTime(dateMax);
-            cal1.add(Calendar.MONTH,3);
-            if(cal1.after(cal2)) {
-                dateMax=newLivre.getDateFin();
+            cal1.add(Calendar.MONTH, 3);
+            if (cal1.after(cal2)) {
+                dateMax = newLivre.getDateFin();
             }
         }
         return dateMax;
@@ -111,9 +110,8 @@ public class LibrairieController {
      */
     @GetMapping(value = "/genre")
     public List<Librairie> findByGenre(  @RequestParam(name = "genre",defaultValue =" " )String genre){
-        List<Librairie>Genrelivres= librairieRepository.findByGenre_Genre(genre);
 
-        return Genrelivres;
+        return librairieRepository.findByGenre_Genre(genre);
 
     }
 
@@ -171,7 +169,6 @@ public class LibrairieController {
         livre.setPrereserveMax(livre.getNExemplaire()*2);
         livre.setPrereserve(0);
         Librairie saveLivre = librairieRepository.save(livre);
-        if(saveLivre == null) throw new ImpossibleAjouterUnLivreException("Impossible d'ajouter ce livre");
 
         return new ResponseEntity<Librairie>(saveLivre, HttpStatus.CREATED);
     }
@@ -229,9 +226,9 @@ public class LibrairieController {
                                    @RequestParam(name = "idLivre") long idLivre) {
         List<LivreReserve> livresLocation = livreRepository.findByIdClient(num);
 
-        for (int i = 0; i < livresLocation.size(); i++) {
+        for (LivreReserve livreReserve : livresLocation) {
 
-            if (livresLocation.get(i).getLibrairie().getId().equals(recupererUnLivre(idLivre))) {
+            if (livreReserve.getLibrairie().getId().equals(recupererUnLivre(idLivre))) {
                 return true;
             }
         }
@@ -250,6 +247,16 @@ public class LibrairieController {
                                         @PathVariable("idUser") Long idUser) {
 
         Librairie livre= recupererUnLivre(idLivre).get();
+
+        LivreReserveAttente livreAttente=livreAttenteIdLivre(idLivre).get();
+        if (livreAttente.getIdClient().equals(idUser)&livreAttente.getMailEnvoye() ){
+            deletePreReservation(livreAttente.getId());
+            livre.setNExemplaire(livre.getNExemplaire()+1);
+        }
+
+
+
+
         if (livre.getNExemplaire()<=0)throw new ImpossibleAjouterUneReservationException("Ce livre n'est plus" +
                 " disponible");
 
@@ -258,18 +265,26 @@ public class LibrairieController {
         cal.setTime(dateJour);
         cal.add(Calendar.MONTH,1);
 
-        List<UserReservation> list=userReservationDao.findAll();
-        boolean userinscrit = false;
 
-        for (int i =0; i < list.size(); i++){
-            UserReservation userlist=list.get(i);
-
-            if (userlist.getIdClient().compareTo(idUser)==0){
-                userinscrit=true;
+        List<LivreReserveAttente>list2=livreAttenteClient(idUser);
+        for (LivreReserveAttente livreReserveAttente : list2) {
+            if (livreReserveAttente.getLibrairie().equals(livre)) {
+                deletePreReservation(livreReserveAttente.getId());
             }
         }
 
-        if (userinscrit==false){
+
+        List<UserReservation> list=userReservationDao.findAll();
+        boolean userinscrit = false;
+
+        for (UserReservation userlist : list) {
+            if (userlist.getIdClient().compareTo(idUser) == 0) {
+                userinscrit = true;
+                break;
+            }
+        }
+
+        if (!userinscrit){
             UserReservation userReservation=new UserReservation();
             userReservation.setIdClient(idUser);
             userReservationDao.save(userReservation);
@@ -286,6 +301,7 @@ public class LibrairieController {
         userReservation.setNbLivre(userReservation.getNbLivre()+1);
 
         return livreRepository.save(livreReserve);
+
     }
 
 
@@ -295,23 +311,53 @@ public class LibrairieController {
      */
     @DeleteMapping (value ="deleteReservation/{id}" )
     public void deleteReservation(@PathVariable("id") Long id) {
-
         LivreReserve livreReserves=livreRepository.findById(id).get();
-        Librairie livre= recupererUnLivre(livreReserves.getLibrairie().getId()).get();
-        livre.setNExemplaire(livre.getNExemplaire()+1);
+        //on fait -1 au nombre de livre que le client à en sa possession
         livreReserves.getUserReservation().setNbLivre(livreReserves.getUserReservation().getNbLivre()-1);
+
+        mail(livreReserves.getLibrairie().getId());
+
+        //on supprime le livre de la liste des livres loués
         livreRepository.deleteById(id);
+
+        // si le client à plus de livre reservé on le supprime de la
+        // liste des clients qui ont un livre en leurs possession.
 
         if (livreReserves.getUserReservation().getNbLivre()==0){
             userReservationDao.delete(livreReserves.getUserReservation());
         }
     }
 
+    private void mail(@PathVariable("id") Long id) {
+
+
+        Librairie livre= recupererUnLivre(id).get();
+        boolean mailEnvoye=false;
+        List<LivreReserveAttente> list=livreReserveAttenteDao.findAll();
+        for (LivreReserveAttente reserveAttente : list) {
+
+            if (reserveAttente.getLibrairie().equals(livre) & reserveAttente.getNlistAttente() == 1) {
+                reserveAttente.setDateMail(new Date());
+                reserveAttente.setMailEnvoye(true);
+                livreReserveAttenteDao.save(reserveAttente);
+                mailEnvoye=true;
+          }
+
+        }
+         if (!mailEnvoye){
+        livre.setNExemplaire(livre.getNExemplaire()+1);}
+    }
+
+
     @PostMapping(value ="savePreReservation/{idLivre}" )
     public LivreReserveAttente savePreReservation( @PathVariable("idLivre") Long idLivre,
                                                    @RequestParam(name ="idUser") Long idUser) {
         LivreReserveAttente livreReserveAttente=new LivreReserveAttente();
         Librairie livre=recupererUnLivre(idLivre).get();
+      if (livreReserveClient(idUser, idLivre)){
+          return null;
+      }
+
         livreReserveAttente.setIdClient(idUser);
         livreReserveAttente.setLibrairie(livre);
         livreReserveAttente.setDateRetour(dateLocationMax(idLivre));
@@ -322,29 +368,61 @@ public class LibrairieController {
 
     }
 
+    public Boolean livreReserveClient(long idClient, long idLivre){
+        Librairie livre=recupererUnLivre(idLivre).get();
+
+        List<LivreReserveAttente>list=livreAttenteClient(idClient);
+        Boolean livrereserveAttente=false;
+        Boolean livrereserve =false;
+        for (LivreReserveAttente reserveAttente : list) {
+            if (reserveAttente.getLibrairie().equals(livre)) {
+                return livrereserveAttente=true;
+            }
+        }
+        List<LivreReserve> listLivreReserve=findByLocation(idClient);
+        for (LivreReserve livreReserve : listLivreReserve) {
+            if (livreReserve.getLibrairie().equals(livre)) {
+                return livrereserve=true;
+            }
+        }
+
+        return livrereserve || livrereserveAttente;
+
+    }
+
     /**
      * Supprimer la Pre-resevation d'un livre
      * @param id da la Pre-reservation.
      */
     @DeleteMapping (value ="deletePreReservation/{id}" )
     public void deletePreReservation(@PathVariable("id") Long id) {
-       LivreReserveAttente livreReserveAttente=livreAttente(id).get();
-       livreReserveAttente.getLibrairie().setPrereserve(livreReserveAttente.getLibrairie().getPrereserve()-1);
-       livreReserveAttenteDao.delete(livreReserveAttente);
+        livreReserveAttente(id);
+
+    }
+    @DeleteMapping (value ="expiration48H/{id}" )
+    public void expiration48H(@PathVariable("id") Long id) {
+        livreReserveAttente(id);
+        long m=118;
+        mail(m);
 
 
-      List<LivreReserveAttente> list=livreReserveAttenteDao.findAll();
+    }
 
-        for (int i =0; i < list.size(); i++){
-            LivreReserveAttente attenteList=list.get(i);
+    private void livreReserveAttente(@PathVariable("id") Long id) {
+        LivreReserveAttente livreReserveAttente=livreAttente(id).get();
+        livreReserveAttente.getLibrairie().setPrereserve(livreReserveAttente.getLibrairie().getPrereserve()-1);
+        livreReserveAttenteDao.delete(livreReserveAttente);
 
-            if (attenteList.getLibrairie().equals(livreReserveAttente.getLibrairie())&
-                    livreReserveAttente.getNlistAttente()<attenteList.getNlistAttente()){
-                attenteList.setNlistAttente(attenteList.getNlistAttente()-1);
+
+        List<LivreReserveAttente> list=livreReserveAttenteDao.findAll();
+
+        for (LivreReserveAttente attenteList : list) {
+            if (attenteList.getLibrairie().equals(livreReserveAttente.getLibrairie()) &
+                    livreReserveAttente.getNlistAttente() < attenteList.getNlistAttente()) {
+                attenteList.setNlistAttente(attenteList.getNlistAttente() - 1);
                 livreReserveAttenteDao.save(attenteList);
             }
         }
-
     }
 
 
@@ -360,6 +438,13 @@ public class LibrairieController {
         return livre;
     }
 
+    @GetMapping(value = "/livreAttenteIdLivre")
+    public Optional<LivreReserveAttente>livreAttenteIdLivre(@RequestParam(name="id",defaultValue = " ")long id){
+        Optional<LivreReserveAttente>livre=livreReserveAttenteDao.findByLibrairie_Id(id);
+        if(!livre.isPresent()) throw new LivreNotFoundException("Ce livre n'existe pas");
+        return livre;
+    }
+
     /**
      * recherche des livres en location par utilisateur
      * @param num
@@ -367,8 +452,7 @@ public class LibrairieController {
      */
     @GetMapping(value = "/livreAttenteClient")
     public List<LivreReserveAttente> livreAttenteClient(@RequestParam(name = "num") long num){
-        List<LivreReserveAttente> livreAttenteClient=livreReserveAttenteDao.findByIdClient(num) ;
-        return livreAttenteClient;
+        return livreReserveAttenteDao.findByIdClient(num);
     }
 
 
