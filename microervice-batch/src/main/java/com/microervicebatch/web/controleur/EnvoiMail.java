@@ -1,5 +1,6 @@
 package com.microervicebatch.web.controleur;
 
+import com.microervicebatch.bean.LivreReserveAttenteBean;
 import com.microervicebatch.bean.LivreReserveBean;
 import com.microervicebatch.bean.UserBean;
 import com.microervicebatch.bean.UserReservationBean;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -123,12 +125,28 @@ public class EnvoiMail {
     }
 
 
-    @Scheduled(cron = "0  33 19 * * * ")
+    @Scheduled(cron = "0  5 17 * * * ")
     public void expiration48H() {
-        long n=118;
-        mlibrairieProxy.expiration48H(n);
 
-    }
+       long m =70;
+        mlibrairieProxy.expiration48H(m);
+
+
+     /*   List<LivreReserveAttenteBean>livreList=mlibrairieProxy.livreAttenteAll();
+        Calendar cal1 = Calendar.getInstance();
+        Calendar cal2 = Calendar.getInstance();
+
+
+        for (LivreReserveAttenteBean attenteList : livreList) {
+            if (attenteList.getMailEnvoye()){
+            cal2.setTime(attenteList.getDateMail());
+            cal1.setTime(new Date());
+            if (cal2.after(cal1)){
+                mlibrairieProxy.expiration48H(attenteList.getId());
+            }}
+*/
+
+        }
 
 }
 

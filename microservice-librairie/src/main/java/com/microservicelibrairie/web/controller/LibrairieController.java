@@ -2,10 +2,11 @@ package com.microservicelibrairie.web.controller;
 
 
 
+import com.microservicelibrairie.bean.UserBean;
 import com.microservicelibrairie.dao.*;
 import com.microservicelibrairie.entities.*;
+import com.microservicelibrairie.proxies.UserProxy;
 import com.microservicelibrairie.web.exceptions.GenreNotFoundException;
-import com.microservicelibrairie.web.exceptions.ImpossibleAjouterUnLivreException;
 import com.microservicelibrairie.web.exceptions.ImpossibleAjouterUneReservationException;
 import com.microservicelibrairie.web.exceptions.LivreNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,10 +15,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.constraints.NotNull;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -27,15 +28,22 @@ public class LibrairieController {
 
 
     @Autowired
-    LibrairieRepository librairieRepository;
+   private LibrairieRepository librairieRepository;
     @Autowired
-    LivreRepository livreRepository;
+    private LivreRepository livreRepository;
     @Autowired
-    UserReservationDao userReservationDao;
+    private UserReservationDao userReservationDao;
     @Autowired
-    GenresRepository genresRepository;
+    private GenresRepository genresRepository;
     @Autowired
-    LivreReserveAttenteDao livreReserveAttenteDao;
+    private LivreReserveAttenteDao livreReserveAttenteDao;
+    @Autowired
+    private UserProxy userProxy;
+    @Autowired
+    private JavaMailSender javaMailSender;
+
+
+
 
 
     @Value("${dir.images}")
@@ -153,7 +161,7 @@ public class LibrairieController {
 
     @GetMapping(value = "/librairie")
     public Optional<Librairie>recupererUnLivre(@RequestParam(name="id",defaultValue = " ")long id){
-        Optional<Librairie>livre=librairieRepository.findById(id);
+        Optional<Librairie> livre = librairieRepository.findById(id);
         if(!livre.isPresent()) throw new LivreNotFoundException("Ce livre n'existe pas");
         return livre;
     }
@@ -248,14 +256,13 @@ public class LibrairieController {
 
         Librairie livre= recupererUnLivre(idLivre).get();
 
-        LivreReserveAttente livreAttente=livreAttenteIdLivre(idLivre).get();
+        List<LivreReserveAttente> listAttente=livreAttenteIdLivre(idLivre);
+
+       for (LivreReserveAttente livreAttente : listAttente ){
         if (livreAttente.getIdClient().equals(idUser)&livreAttente.getMailEnvoye() ){
             deletePreReservation(livreAttente.getId());
             livre.setNExemplaire(livre.getNExemplaire()+1);
-        }
-
-
-
+        }}
 
         if (livre.getNExemplaire()<=0)throw new ImpossibleAjouterUneReservationException("Ce livre n'est plus" +
                 " disponible");
@@ -312,10 +319,19 @@ public class LibrairieController {
     @DeleteMapping (value ="deleteReservation/{id}" )
     public void deleteReservation(@PathVariable("id") Long id) {
         LivreReserve livreReserves=livreRepository.findById(id).get();
+        Librairie livre=librairieRepository.findById(livreReserves.getLibrairie().getId()).get();
         //on fait -1 au nombre de livre que le client à en sa possession
         livreReserves.getUserReservation().setNbLivre(livreReserves.getUserReservation().getNbLivre()-1);
-
+       List<LivreReserveAttente>list=livreReserveAttenteDao.findAll();
+       if(list.size()>0){
         mail(livreReserves.getLibrairie().getId());
+       }else {
+           livre.setNExemplaire(livre.getNExemplaire()+1);
+           librairieRepository.save(livre);
+
+       }
+
+
 
         //on supprime le livre de la liste des livres loués
         livreRepository.deleteById(id);
@@ -330,22 +346,19 @@ public class LibrairieController {
 
     private void mail(@PathVariable("id") Long id) {
 
-
         Librairie livre= recupererUnLivre(id).get();
-        boolean mailEnvoye=false;
         List<LivreReserveAttente> list=livreReserveAttenteDao.findAll();
         for (LivreReserveAttente reserveAttente : list) {
-
             if (reserveAttente.getLibrairie().equals(livre) & reserveAttente.getNlistAttente() == 1) {
+                sendEmail(reserveAttente.getId());
                 reserveAttente.setDateMail(new Date());
                 reserveAttente.setMailEnvoye(true);
                 livreReserveAttenteDao.save(reserveAttente);
-                mailEnvoye=true;
-          }
-
+            }else {
+                livre.setNExemplaire(livre.getNExemplaire()+1);
+                librairieRepository.save(livre);
+            }
         }
-         if (!mailEnvoye){
-        livre.setNExemplaire(livre.getNExemplaire()+1);}
     }
 
 
@@ -399,13 +412,20 @@ public class LibrairieController {
         livreReserveAttente(id);
 
     }
+
     @DeleteMapping (value ="expiration48H/{id}" )
     public void expiration48H(@PathVariable("id") Long id) {
+
+        LivreReserveAttente livreReserveAttente=livreAttente(id).get();
         livreReserveAttente(id);
-        long m=118;
-        mail(m);
+        mail(livreReserveAttente.getLibrairie().getId());
 
-
+        List<LivreReserveAttente> list=livreReserveAttenteDao.findAll();
+        for (LivreReserveAttente attenteList : list) {
+            if(!attenteList.getLibrairie().equals(livreReserveAttente.getLibrairie())){
+                attenteList.getLibrairie().setNExemplaire(attenteList.getLibrairie().getNExemplaire()+1);
+            }
+       }
     }
 
     private void livreReserveAttente(@PathVariable("id") Long id) {
@@ -422,6 +442,7 @@ public class LibrairieController {
                 attenteList.setNlistAttente(attenteList.getNlistAttente() - 1);
                 livreReserveAttenteDao.save(attenteList);
             }
+
         }
     }
 
@@ -433,15 +454,15 @@ public class LibrairieController {
 
     @GetMapping(value = "/livreAttente")
     public Optional<LivreReserveAttente>livreAttente(@RequestParam(name="id",defaultValue = " ")long id){
+
         Optional<LivreReserveAttente>livre=livreReserveAttenteDao.findById(id);
         if(!livre.isPresent()) throw new LivreNotFoundException("Ce livre n'existe pas");
         return livre;
     }
 
     @GetMapping(value = "/livreAttenteIdLivre")
-    public Optional<LivreReserveAttente>livreAttenteIdLivre(@RequestParam(name="id",defaultValue = " ")long id){
-        Optional<LivreReserveAttente>livre=livreReserveAttenteDao.findByLibrairie_Id(id);
-        if(!livre.isPresent()) throw new LivreNotFoundException("Ce livre n'existe pas");
+    public List<LivreReserveAttente>livreAttenteIdLivre(@RequestParam(name="id",defaultValue = " ")long id){
+        List<LivreReserveAttente>livre=livreReserveAttenteDao.findByLibrairie_Id(id);
         return livre;
     }
 
@@ -455,6 +476,55 @@ public class LibrairieController {
         return livreReserveAttenteDao.findByIdClient(num);
     }
 
+    @GetMapping(value = "/livreAttenteAll")
+    public List<LivreReserveAttente> livreAttenteAll(){
+        return livreReserveAttenteDao.findAll();
+    }
 
+
+    public void sendEmail(long idReservation) {
+
+        SimpleDateFormat formater = null;
+        Date dateJour= new Date();
+        formater = new SimpleDateFormat("'le' dd/MM/yyyy");
+        Optional<LivreReserveAttente> livreReserveAttenteList=livreReserveAttenteDao.findById(idReservation);
+       UserBean client=userProxy.findById(livreReserveAttenteList.get().getIdClient()).get();
+
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setTo(client.getEmail());
+
+        msg.setSubject("Bibliothèque de Tours - Courrier de rappel");
+        msg.setText("Bibliothèque Municipale de Tours\n" +
+                "    2bis AV. ANDRE MALRAUX\n" +
+                "    37042 TOURS CEDEX\n" +
+                "    02 47 05 47 33\n" +
+                "    secretariat@bm-tours.fr\n" +
+                "\n" +
+                "\n" +
+                "                                                  M. "+" "+ client.getNom()+" "
+                + client.getPrenom()+"\n" +
+                "\n" +
+                "                                                  Tours," +formater.format(dateJour)+"\n" +
+                "\n" +
+                "\n" +
+                "\n" +
+                "    Madame, Monsieur, \n" +
+                "\n" +
+                "    Nous sommes heureux de vous informé que le livre que vous avez reservé est diponible \n" +
+                "    à l'accueil de votre bibliothéque.\n"+
+                "\n" +
+                "    Merci de recuperer sans tarder le "+livreReserveAttenteList.get().getLibrairie().getGenre().getGenre()+" " +
+                " qui a pour titre "+ livreReserveAttenteList.get().getLibrairie().getTitre()+".\n" +
+                "\n" +
+                "    Vous avez 48h pour le recuper faute de quoi votre reservation sera  annulé \n" +
+                "\n" +
+                "    Comptant sur votre réativité et restant à votre disposition pour tout renseignement relatif\n" +
+                "      disposition pour tout renseignement relatif aux prêts, je vous prie d'agréer mes\n" +
+                "      sincères salutations.\n" +
+                "\n" +
+                "                                        La Directrice de la Bibliothèque.\n" +
+                "\n" +
+                "\n");
+        javaMailSender.send(msg);}
 
 }

@@ -45,11 +45,60 @@ public class Librairie implements Serializable {
     Integer prereserve;
 
 
-    @NotNull
+
     String photo;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "genre_id")
     Genre genre;
 
+    public Librairie(Builder builder) {
+        this.id=builder.id;
+        this.titre=builder.titre;
+        this.auteur=builder.auteur;
+        this.resume=builder.resume;
+        this.nExemplaire=builder.nExemplaire;
+        this.prereserveMax=builder.prereserveMax;
+        this.prereserve=builder.preeserver;
+        this.genre=builder.genre;
+    }
+
+    public static class Builder{
+        Long id;
+        String titre;
+        String auteur;
+        String resume;
+        Integer nExemplaire;
+        Integer prereserveMax;
+        Integer preeserver;
+        Genre genre;
+
+        public Librairie.Builder id(Long id){
+            this.id= id;
+            return this;}
+        public Librairie.Builder titre(String titre){
+            this.titre= titre;
+            return this;}
+        public Librairie.Builder auteur(String auteur){
+            this.auteur= auteur;
+            return this;}
+        public Librairie.Builder nExemplaire(Integer nExemplaire){
+            this.nExemplaire= nExemplaire;
+            return this;}
+        public Librairie.Builder resume(String resume){
+            this.resume= resume;
+            return this;}
+        public Librairie.Builder prereserveMax(Integer prereserveMax){
+            this.prereserveMax= prereserveMax;
+            return this;}
+        public Librairie.Builder preeserver(Integer preeserver){
+            this.preeserver= preeserver;
+            return this;}
+        public Librairie.Builder genre(Genre genre){
+            this.genre= genre;
+            return this;}
+        public Librairie build(){
+            return new Librairie(this);}
+
+    }
 }

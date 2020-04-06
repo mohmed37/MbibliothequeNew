@@ -1,5 +1,6 @@
 package com.microervicebatch.proxies;
 
+import com.microervicebatch.bean.LivreReserveAttenteBean;
 import com.microervicebatch.bean.LivreReserveBean;
 import com.microervicebatch.bean.UserReservationBean;
 import org.springframework.cloud.netflix.ribbon.RibbonClient;
@@ -19,8 +20,11 @@ public interface MlibrairieProxy {
  List<LivreReserveBean> findByLocation(@RequestParam(name = "num") long num);
 
 
- @DeleteMapping (value ="/microservice-librairie/{id}" )
+ @DeleteMapping (value ="/microservice-librairie/expiration48H/{id}" )
  void expiration48H(@PathVariable("id") Long id);
+
+ @GetMapping(value = "/microservice-librairie/livreAttenteAll")
+ List<LivreReserveAttenteBean> livreAttenteAll();
 
 }
 

@@ -46,5 +46,44 @@ public class LivreReserveAttente  implements Serializable {
     @JoinColumn(name = "livre_id")
     Librairie librairie;
 
+    public LivreReserveAttente(Builder builder) {
+        this.id=builder.id;
+        this.idClient=builder.idClient;
+        this.nlistAttente=builder.nlistAttente;
+        this.dateRetour=builder.dateRetour;
+        this.dateMail=builder.dateMail;
+        this.mailEnvoye=builder.mailEnvoye;
+        this.librairie=builder.librairie;
+    }
 
+
+    public static class Builder{
+
+        Long id;
+        Long idClient;
+        Integer nlistAttente;
+        Date dateRetour;
+        Date dateMail;
+        Boolean mailEnvoye;
+        Librairie librairie;
+
+        public LivreReserveAttente.Builder id(Long id){
+            this.id= id;return this;}
+        public LivreReserveAttente.Builder idClient(Long idClient){
+            this.idClient= idClient;return this;}
+        public LivreReserveAttente.Builder nlistAttente(Integer nlistAttente){
+            this.nlistAttente= nlistAttente;return this;}
+        public LivreReserveAttente.Builder dateRetour(Date dateRetour){
+            this.dateRetour= dateRetour;return this;}
+        public LivreReserveAttente.Builder dateMail(Date dateMail){
+            this.dateMail= dateMail;return this;}
+        public LivreReserveAttente.Builder mailEvoyel(Boolean mailEnvoye){
+            this.mailEnvoye= mailEnvoye;return this;}
+        public LivreReserveAttente.Builder librairie(Librairie librairie){
+            this.librairie= librairie;return this;}
+        public LivreReserveAttente build(){
+            return new LivreReserveAttente(this);}
+
+
+    }
 }
