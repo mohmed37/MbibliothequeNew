@@ -11,13 +11,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,6 +48,7 @@ public class ClientController {
     private String imageDir;
 
     Logger log = LoggerFactory.getLogger(this.getClass());
+    private Model model;
 
     /**
      * page d'accueil
@@ -64,6 +70,7 @@ public class ClientController {
         model.addAttribute("pageCourant",page);
         List<GenreBean>genres=mlibrairieProxy.genreLivreAll();
         model.addAttribute("genres",genres);
+
         return "Accueil";
     }
 
@@ -78,6 +85,7 @@ public class ClientController {
         model.addAttribute("pageLivres", pageLivres);
         List<GenreBean>genres=mlibrairieProxy.genreLivreAll();
         model.addAttribute("genres",genres);
+
         return "Accueil";
     }
 
@@ -89,6 +97,17 @@ public class ClientController {
     public String login(){
         return "login";
     }
+
+    @RequestMapping(value="/logout", method = RequestMethod.GET)
+    public String logoutPage (HttpServletRequest request, HttpServletResponse response) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null){
+            new SecurityContextLogoutHandler().logout(request, response, auth);
+        }
+        return "redirect:/";
+    }
+
+
 
     /**
      * @param id rechercher un livre par son Id.
@@ -192,8 +211,8 @@ public class ClientController {
      * @param id
 
      */
-    @RequestMapping(value = "/prolongation")
-    public String prolongation(long id){
+    @RequestMapping(value = "/prolongation/{id}")
+    public String prolongation(@PathVariable("id") long id){
         mlibrairieProxy.prolongation(id);
 
         return "redirect:/userLocation";

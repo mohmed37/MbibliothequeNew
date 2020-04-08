@@ -126,8 +126,11 @@
                 <td th:text="${livrelocation.getLibrairie().titre}"></td>
                 <td th:text="${livrelocation.getDateCreatedString(livrelocation.dateDeb)}" ></td>
                 <td th:text="${livrelocation.getDateCreatedString(livrelocation.dateFin)}"></td>
-                <td><a  th:if="${dateJour.before(livrelocation.dateFin) && livrelocation.getProlongation()==false} "
-                        th:href="@{prolongation(id=${livrelocation.id})}">Prolongation</a></td>
+                <td th:if="${dateJour.before(livrelocation.dateFin) && livrelocation.getProlongation()==false} ">
+                <form th:action="@{prolongation/{id}(id=${livrelocation.id})}" method="get">
+                    <button class="btn btn-success" type="submit" >Prolongation</button>
+                </form>
+                </td>
             </tr>
 
             </tbody>
@@ -155,7 +158,11 @@
                     <td th:text="${livreAttente.getLibrairie().titre}"></td>
                     <td th:text="${livreAttente.getDateCreatedString(livreAttente.getDateRetour())}" ></td>
                     <td th:text="${livreAttente.getNlistAttente()}"></td>
-                    <td><a onclick="return confirm('Etes vous sures de vouloir supprimer votre reservation?')" th:href="@{/delete/{id}(id=${livreAttente.id})}">Annuler</a></td>
+                    <td>
+                    <form th:action="@{/delete/{id}(id=${livreAttente.id})}" method="get">
+                        <button onclick="return confirm('Etes vous sures de vouloir supprimer votre reservation?')" class="btn btn-danger" type="submit" >Annuler</button>
+                    </form>
+                  </td>
                 </tr>
                 </tbody>
 
