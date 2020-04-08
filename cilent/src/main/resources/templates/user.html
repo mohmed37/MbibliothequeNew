@@ -155,9 +155,8 @@
                     <td th:text="${livreAttente.getLibrairie().titre}"></td>
                     <td th:text="${livreAttente.getDateCreatedString(livreAttente.getDateRetour())}" ></td>
                     <td th:text="${livreAttente.getNlistAttente()}"></td>
-                    <td><a th:href="@{/delete/{id}(id=${livreAttente.id})}">Annuler</a></td>
+                    <td><a onclick="return confirm('Etes vous sures de vouloir supprimer votre reservation?')" th:href="@{/delete/{id}(id=${livreAttente.id})}">Annuler</a></td>
                 </tr>
-
                 </tbody>
 
             </table>

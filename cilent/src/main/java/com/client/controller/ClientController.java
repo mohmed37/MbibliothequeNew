@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -101,21 +102,6 @@ public class ClientController {
         model.addAttribute("dateRetour",dateRetour);
         UserBean userConnec=userService.getUserConnec();
         model.addAttribute("userConnect",userConnec);
-
-
-
-      /*  Boolean livreattenteReserve = false;
-        model.addAttribute("livreattenteReserve", livreattenteReserve);
-       *//* List<LivreReserveAttenteBean> attenteBeanList=mlibrairieProxy.livreAttenteClient(userConnec.getNum());
-        for (int i = 0; i < attenteBeanList.size(); i++) {
-
-            if (attenteBeanList.get(i).getLibrairie().getId().equals(id)){
-                livreattenteReserve=true;
-
-            }
-
-        }*/
-
         return "detailLivre";
 
 
@@ -166,8 +152,10 @@ public class ClientController {
 
     @RequestMapping("/save")
     public String saveLivre(@Valid @ModelAttribute("livre")LibrairieBean livre,
-                            @RequestParam(name = "picture") MultipartFile file,@RequestParam("iDgenre") int iDgenre) throws IOException {
-
+                            @RequestParam(name = "picture") MultipartFile file, @RequestParam("iDgenre") int iDgenre, BindingResult bindingResult) throws IOException {
+        if (bindingResult.hasErrors()){
+            return "formLivre";
+        }
         livre.setGenre(mlibrairieProxy.GenreLivre(iDgenre).get());
 
         livre = mlibrairieProxy.saveLivre(livre);

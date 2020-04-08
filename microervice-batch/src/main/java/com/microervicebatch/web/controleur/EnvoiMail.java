@@ -125,26 +125,26 @@ public class EnvoiMail {
     }
 
 
-    @Scheduled(cron = "0  5 17 * * * ")
+    @Scheduled(cron = "0 2 12 * * * ")
     public void expiration48H() {
+     expiration(); }
 
-       long m =70;
-        mlibrairieProxy.expiration48H(m);
-
-
-     /*   List<LivreReserveAttenteBean>livreList=mlibrairieProxy.livreAttenteAll();
-        Calendar cal1 = Calendar.getInstance();
-        Calendar cal2 = Calendar.getInstance();
+            private void expiration(){
+            List<LivreReserveAttenteBean>livreList=mlibrairieProxy.livreAttenteAll();
+            Calendar cal1 = Calendar.getInstance();
+            Calendar cal2 = Calendar.getInstance();
 
 
-        for (LivreReserveAttenteBean attenteList : livreList) {
-            if (attenteList.getMailEnvoye()){
-            cal2.setTime(attenteList.getDateMail());
-            cal1.setTime(new Date());
-            if (cal2.after(cal1)){
-                mlibrairieProxy.expiration48H(attenteList.getId());
-            }}
-*/
+            for (LivreReserveAttenteBean attenteList : livreList) {
+                if (attenteList.getMailEnvoye()){
+                    cal2.setTime(attenteList.getDateMail());
+                    cal1.setTime(new Date());
+                    if (cal2.before(cal1)){
+                        mlibrairieProxy.expiration48H(attenteList.getId());
+                    }
+                }
+
+            }
 
         }
 

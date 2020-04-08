@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.SimpleDateFormat;
@@ -173,7 +174,10 @@ public class LibrairieController {
      * @return
      */
     @PostMapping(value = "/librairies")
-    public ResponseEntity<Librairie>saveLivre(@RequestBody Librairie livre){
+    public ResponseEntity<Librairie>saveLivre(@RequestBody Librairie livre, BindingResult bindingResult){
+        if (bindingResult.hasErrors()){
+            return null;
+        }
         livre.setPrereserveMax(livre.getNExemplaire()*2);
         livre.setPrereserve(0);
         Librairie saveLivre = librairieRepository.save(livre);
@@ -252,7 +256,10 @@ public class LibrairieController {
 
     @PostMapping(value ="saveReservation/{idLivre}/{idUser}" )
     public LivreReserve saveReservation(@RequestBody LivreReserve livreReserve, @PathVariable("idLivre") Long idLivre,
-                                        @PathVariable("idUser") Long idUser) {
+                                        @PathVariable("idUser") Long idUser,BindingResult bindingResult) {
+        if(bindingResult.hasErrors()){
+            return null;
+        }
 
         Librairie livre= recupererUnLivre(idLivre).get();
 
@@ -348,15 +355,18 @@ public class LibrairieController {
 
         Librairie livre= recupererUnLivre(id).get();
         List<LivreReserveAttente> list=livreReserveAttenteDao.findAll();
+
+        Date dateJour= new Date();
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(dateJour);
+        cal.add(Calendar.HOUR,48);
+
         for (LivreReserveAttente reserveAttente : list) {
             if (reserveAttente.getLibrairie().equals(livre) & reserveAttente.getNlistAttente() == 1) {
+                reserveAttente.setDateMail(cal.getTime());
                 sendEmail(reserveAttente.getId());
-                reserveAttente.setDateMail(new Date());
                 reserveAttente.setMailEnvoye(true);
                 livreReserveAttenteDao.save(reserveAttente);
-            }else {
-                livre.setNExemplaire(livre.getNExemplaire()+1);
-                librairieRepository.save(livre);
             }
         }
     }
@@ -364,7 +374,11 @@ public class LibrairieController {
 
     @PostMapping(value ="savePreReservation/{idLivre}" )
     public LivreReserveAttente savePreReservation( @PathVariable("idLivre") Long idLivre,
-                                                   @RequestParam(name ="idUser") Long idUser) {
+                                                   @RequestParam(name ="idUser") Long idUser,BindingResult bindingResult
+                                                   ) {
+        if (bindingResult.hasErrors()){
+            return null;
+        }
         LivreReserveAttente livreReserveAttente=new LivreReserveAttente();
         Librairie livre=recupererUnLivre(idLivre).get();
       if (livreReserveClient(idUser, idLivre)){
@@ -373,6 +387,7 @@ public class LibrairieController {
 
         livreReserveAttente.setIdClient(idUser);
         livreReserveAttente.setLibrairie(livre);
+        livreReserveAttente.setMailEnvoye(false);
         livreReserveAttente.setDateRetour(dateLocationMax(idLivre));
         livreReserveAttente.setNlistAttente(livre.getPrereserve()+1);
         livre.setPrereserve(livre.getPrereserve()+1);
@@ -409,40 +424,40 @@ public class LibrairieController {
      */
     @DeleteMapping (value ="deletePreReservation/{id}" )
     public void deletePreReservation(@PathVariable("id") Long id) {
-        livreReserveAttente(id);
-
-    }
-
-    @DeleteMapping (value ="expiration48H/{id}" )
-    public void expiration48H(@PathVariable("id") Long id) {
-
         LivreReserveAttente livreReserveAttente=livreAttente(id).get();
-        livreReserveAttente(id);
-        mail(livreReserveAttente.getLibrairie().getId());
+        livreReserveAttente.getLibrairie().setPrereserve(livreReserveAttente.getLibrairie().getPrereserve()-1);
 
-        List<LivreReserveAttente> list=livreReserveAttenteDao.findAll();
-        for (LivreReserveAttente attenteList : list) {
-            if(!attenteList.getLibrairie().equals(livreReserveAttente.getLibrairie())){
-                attenteList.getLibrairie().setNExemplaire(attenteList.getLibrairie().getNExemplaire()+1);
-            }
+       if(livreReserveAttente.getMailEnvoye()){
+           Librairie livre=librairieRepository.findById(livreReserveAttente.getLibrairie().getId()).get();
+           livreReserveAttente(id);
+
+           List<LivreReserveAttente> list=livreReserveAttenteDao.findAll();
+           if ((list.size()==0)){
+               livre.setNExemplaire(livre.getNExemplaire()+1);
+               librairieRepository.save(livre);
+           }
+           for (LivreReserveAttente attenteList : list) {
+               if(!attenteList.getLibrairie().equals(livreReserveAttente.getLibrairie())){
+                   livre.setNExemplaire(livre.getNExemplaire()+1);
+                   librairieRepository.save(livre);
+               }
+           }
+       }else {
+        livreReserveAttente(id);
        }
     }
 
     private void livreReserveAttente(@PathVariable("id") Long id) {
         LivreReserveAttente livreReserveAttente=livreAttente(id).get();
-        livreReserveAttente.getLibrairie().setPrereserve(livreReserveAttente.getLibrairie().getPrereserve()-1);
-        livreReserveAttenteDao.delete(livreReserveAttente);
-
-
         List<LivreReserveAttente> list=livreReserveAttenteDao.findAll();
-
+        livreReserveAttenteDao.delete(livreReserveAttente);
         for (LivreReserveAttente attenteList : list) {
             if (attenteList.getLibrairie().equals(livreReserveAttente.getLibrairie()) &
                     livreReserveAttente.getNlistAttente() < attenteList.getNlistAttente()) {
                 attenteList.setNlistAttente(attenteList.getNlistAttente() - 1);
                 livreReserveAttenteDao.save(attenteList);
+                mail(livreReserveAttente.getLibrairie().getId());
             }
-
         }
     }
 
@@ -482,7 +497,7 @@ public class LibrairieController {
     }
 
 
-    public void sendEmail(long idReservation) {
+    private void sendEmail(long idReservation) {
 
         SimpleDateFormat formater = null;
         Date dateJour= new Date();
@@ -516,7 +531,7 @@ public class LibrairieController {
                 "    Merci de recuperer sans tarder le "+livreReserveAttenteList.get().getLibrairie().getGenre().getGenre()+" " +
                 " qui a pour titre "+ livreReserveAttenteList.get().getLibrairie().getTitre()+".\n" +
                 "\n" +
-                "    Vous avez 48h pour le recuper faute de quoi votre reservation sera  annulé \n" +
+                "    Vous avez 48 heures pour le recuper faute de quoi votre reservation sera  annulée \n" +
                 "\n" +
                 "    Comptant sur votre réativité et restant à votre disposition pour tout renseignement relatif\n" +
                 "      disposition pour tout renseignement relatif aux prêts, je vous prie d'agréer mes\n" +
