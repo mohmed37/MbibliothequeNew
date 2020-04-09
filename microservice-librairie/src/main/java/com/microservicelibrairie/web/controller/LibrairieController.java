@@ -374,11 +374,9 @@ public class LibrairieController {
 
     @PostMapping(value ="savePreReservation/{idLivre}" )
     public LivreReserveAttente savePreReservation( @PathVariable("idLivre") Long idLivre,
-                                                   @RequestParam(name ="idUser") Long idUser,BindingResult bindingResult
+                                                   @RequestParam(name ="idUser") Long idUser
                                                    ) {
-        if (bindingResult.hasErrors()){
-            return null;
-        }
+
         LivreReserveAttente livreReserveAttente=new LivreReserveAttente();
         Librairie livre=recupererUnLivre(idLivre).get();
       if (livreReserveClient(idUser, idLivre)){
