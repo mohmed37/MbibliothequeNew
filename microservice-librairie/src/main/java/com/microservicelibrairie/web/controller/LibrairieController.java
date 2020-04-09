@@ -335,15 +335,10 @@ public class LibrairieController {
            librairieRepository.save(livre);
 
        }
-
-
-
         //on supprime le livre de la liste des livres loués
         livreRepository.deleteById(id);
-
         // si le client à plus de livre reservé on le supprime de la
         // liste des clients qui ont un livre en leurs possession.
-
         if (livreReserves.getUserReservation().getNbLivre()==0){
             userReservationDao.delete(livreReserves.getUserReservation());
         }
