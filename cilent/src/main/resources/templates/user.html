@@ -126,6 +126,7 @@
                 <td th:text="${livrelocation.getLibrairie().titre}"></td>
                 <td th:text="${livrelocation.getDateCreatedString(livrelocation.dateDeb)}" ></td>
                 <td th:text="${livrelocation.getDateCreatedString(livrelocation.dateFin)}"></td>
+                <!--Ajout d'une condition si la prolongation à dejà été réalisé ou que la date est dépasée  -->
                 <td th:if="${dateJour.before(livrelocation.dateFin) && livrelocation.getProlongation()==false} ">
                 <form th:action="@{prolongation/{id}(id=${livrelocation.id})}" method="get">
                     <button class="btn btn-success" type="submit" >Prolongation</button>
