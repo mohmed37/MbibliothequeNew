@@ -125,8 +125,9 @@
                 <td th:text="${livrelocation.getLibrairie().titre}"></td>
                 <td th:text="${livrelocation.getDateCreatedString(livrelocation.dateDeb)}" ></td>
                 <td th:text="${livrelocation.getDateCreatedString(livrelocation.dateFin)}"></td>
+                <!--Ajout d'une condition si la prolongation à dejà été réalisé ou que la date est dépasée  -->
                 <td><a  th:if="${dateJour.before(livrelocation.dateFin) && livrelocation.getProlongation()==false} "
-                        th:href="@{prolongation(id=${livrelocation.id})}">Prolongation</a></td>
+                    th:href="@{prolongation(id=${livrelocation.id})}">Prolongation</a></td>
             </tr>
 
             </tbody>

@@ -183,7 +183,12 @@ public class LibrairieController {
 
     @PutMapping(value ="/prolongation")
     public void prolongation(@RequestParam(name = "id") Long id) {
+
         LivreReserve prolongation= livreRepository.findById(id).get();
+
+        //J'ai mis une exception pour une erreur sur la demande de prolongation.
+        if(prolongation.getProlongation()) throw new RuntimeException("La prolongation à dejà était réalisée" +
+                " ou la date est dépassée");
 
         Calendar cal = Calendar.getInstance();
         cal.setTime(prolongation.getDateFin());
@@ -192,6 +197,7 @@ public class LibrairieController {
         prolongation.setProlongation(true);
         livreRepository.save(prolongation);
     }
+
 
     /**
      * Permet de mettre à jour la reservation d'un livre
