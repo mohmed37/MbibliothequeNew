@@ -1,5 +1,6 @@
 package com.microervicebatch.web.controleur;
 
+import com.microervicebatch.bean.LivreReserveAttenteBean;
 import com.microervicebatch.bean.LivreReserveBean;
 import com.microervicebatch.bean.UserBean;
 import com.microervicebatch.bean.UserReservationBean;
@@ -10,7 +11,12 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,7 +36,7 @@ public class EnvoiMail {
     /**
      * envoi du mail de relance en automatique.
      */
-    @Scheduled(cron = "0  33 17 * * * ")
+    @Scheduled(cron = "0  33 19 * * * ")
     public void sendEmail() {
 
         SimpleDateFormat formater = null;
@@ -118,4 +124,31 @@ public class EnvoiMail {
         return chaineAfficher;
     }
 
+
+    @Scheduled(cron = "0 2 12 * * * ")
+    public void expiration48H() {
+     expiration(); }
+
+            private void expiration(){
+            List<LivreReserveAttenteBean>livreList=mlibrairieProxy.livreAttenteAll();
+            Calendar cal1 = Calendar.getInstance();
+            Calendar cal2 = Calendar.getInstance();
+
+
+            for (LivreReserveAttenteBean attenteList : livreList) {
+                if (attenteList.getMailEnvoye()){
+                    cal2.setTime(attenteList.getDateMail());
+                    cal1.setTime(new Date());
+                    if (cal2.before(cal1)){
+                        mlibrairieProxy.expiration48H(attenteList.getId());
+                    }
+                }
+
+            }
+
+        }
+
 }
+
+
+
