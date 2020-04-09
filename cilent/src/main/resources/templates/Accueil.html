@@ -176,24 +176,17 @@
             <input type="text" name="motClefTitre"/>
             <label class="black">Rechercher avec l'auteur:</label>
             <input type="text" name="motClefAuteur"/>
-
             <button type="submit"><i class="fa fa-search" style="font-size:24px;color:red"></i></button>
         </div>
-
     </form>
-
 </div>
-<h1  class="text-center">Livres disponibles à la bibliothéque de <span class="content-header wow fadeIn " data-wow-delay="0.2s" data-wow-duration="2s">Tours.</span></h1></br>
-
-
-
+<h1  class="text-center">Livres disponibles à la bibliothéque de <span class="content-header wow fadeIn "
+        data-wow-delay="0.2s" data-wow-duration="2s">Tours.</span></h1></br>
 
 <div class="container-fluid ">
-
     <div id="admin-sidebar" class="col-md-12 p-x-0 p-y-3 ">
         <div class="row">
             <ul  th:each="genre : ${genres}" class="sidenav admin-sidenav list-unstyled">
-
                 <li><a th:href="@{selectionParGenre(genre=${genre.genre})}" > <p th:text="${genre.getGenre()}"></p></a></li>
             </ul>
         </div> <!-- /#admin-sidebar -->
@@ -202,30 +195,19 @@
 <div class="container-fluid ">
     <div class="row">
         <div id="admin-main-control"class="col-md-3 p-x-3 p-y-1" th:each="livre : ${pageLivres}">
-
             <div class="our-team-main"  th:href="@{detailLivre(id=${livre.id})}">
                 <div class="team-front" >
-
                     <img  th:src="@{getPhoto(id=${livre.id})}" class="img-fluid" />
                     <h3> <p th:text="${livre.titre}"></p></h3>
                     <p th:text="${livre.getGenre().genre}"></p>
                     <p th:text="${livre.auteur}"></p>
-
-
-
-
                 </div>
-
                 <div class="team-back">
-	<span>
-
+                    <span>
 	<!-- <p th:text="${livre.resume}"></p>-->
-
-        <p class="black">Vous voulez des détails?</br><a th:href="@{detailLivre(id=${livre.id})}" title="Vous ne le regretterez pas ! " target="_blank">Cliquer ici</a></p>
-
-
+        <p class="black">Vous voulez des détails?</br><a th:href="@{detailLivre(id=${livre.id})}"
+                         title="Vous ne le regretterez pas ! " target="_blank">Cliquer ici</a></p>
 	</span>
-
                 </div>
             </div>
 

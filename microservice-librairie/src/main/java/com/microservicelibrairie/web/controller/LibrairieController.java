@@ -1,16 +1,12 @@
 package com.microservicelibrairie.web.controller;
 
 
-import com.microservicelibrairie.dao.GenresRepository;
-import com.microservicelibrairie.dao.LibrairieRepository;
-import com.microservicelibrairie.dao.LivreRepository;
-import com.microservicelibrairie.dao.UserReservationDao;
-import com.microservicelibrairie.entities.Genre;
-import com.microservicelibrairie.entities.Librairie;
-import com.microservicelibrairie.entities.LivreReserve;
-import com.microservicelibrairie.entities.UserReservation;
+
+import com.microservicelibrairie.bean.UserBean;
+import com.microservicelibrairie.dao.*;
+import com.microservicelibrairie.entities.*;
+import com.microservicelibrairie.proxies.UserProxy;
 import com.microservicelibrairie.web.exceptions.GenreNotFoundException;
-import com.microservicelibrairie.web.exceptions.ImpossibleAjouterUnLivreException;
 import com.microservicelibrairie.web.exceptions.ImpossibleAjouterUneReservationException;
 import com.microservicelibrairie.web.exceptions.LivreNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +15,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 
@@ -29,13 +29,22 @@ public class LibrairieController {
 
 
     @Autowired
-    LibrairieRepository librairieRepository;
+   private LibrairieRepository librairieRepository;
     @Autowired
-    LivreRepository livreRepository;
+    private LivreRepository livreRepository;
     @Autowired
-    UserReservationDao userReservationDao;
+    private UserReservationDao userReservationDao;
     @Autowired
-    GenresRepository genresRepository;
+    private GenresRepository genresRepository;
+    @Autowired
+    private LivreReserveAttenteDao livreReserveAttenteDao;
+    @Autowired
+    private UserProxy userProxy;
+    @Autowired
+    private JavaMailSender javaMailSender;
+
+
+
 
 
     @Value("${dir.images}")
@@ -69,9 +78,8 @@ public class LibrairieController {
                                          @RequestParam(name = "motClefAuteur",defaultValue ="") String motClefAuteur,
                                          @RequestParam(name = "motClefTitre",defaultValue ="") String motClefTitre)
     {
-        Page<Librairie>Pagelivres= librairieRepository.findByAuteurContainingIgnoreCaseAndTitreContainingIgnoreCase(
+        return librairieRepository.findByAuteurContainingIgnoreCaseAndTitreContainingIgnoreCase(
                 motClefAuteur,motClefTitre,PageRequest.of(page,size));
-        return Pagelivres;
     }
 
     /**
@@ -81,9 +89,28 @@ public class LibrairieController {
      */
     @GetMapping(value = "/location")
     public List<LivreReserve> findByLocation(@RequestParam(name = "num") long num){
-        List<LivreReserve> livresLocation=livreRepository.findByIdClient(num) ;
-        return livresLocation;
+        return livreRepository.findByIdClient(num);
     }
+
+    @GetMapping(value = "/locationDteMax")
+    public Date dateLocationMax(@RequestParam(name = "id") long id){
+        List<LivreReserve> livresLocation=livreRepository.findByLibrairie_Id(id) ;
+        Date dateMax =null;
+        Calendar cal1 = Calendar.getInstance();
+        Calendar cal2 = Calendar.getInstance();
+
+        for (LivreReserve newLivre : livresLocation) {
+            dateMax = livresLocation.get(0).getDateFin();
+            cal2.setTime(newLivre.getDateFin());
+            cal1.setTime(dateMax);
+            cal1.add(Calendar.MONTH, 3);
+            if (cal1.after(cal2)) {
+                dateMax = newLivre.getDateFin();
+            }
+        }
+        return dateMax;
+    }
+
 
     /**
      * Rechercher des livres par genre
@@ -92,9 +119,8 @@ public class LibrairieController {
      */
     @GetMapping(value = "/genre")
     public List<Librairie> findByGenre(  @RequestParam(name = "genre",defaultValue =" " )String genre){
-        List<Librairie>Genrelivres= librairieRepository.findByGenre_Genre(genre);
 
-        return Genrelivres;
+        return librairieRepository.findByGenre_Genre(genre);
 
     }
 
@@ -136,7 +162,7 @@ public class LibrairieController {
 
     @GetMapping(value = "/librairie")
     public Optional<Librairie>recupererUnLivre(@RequestParam(name="id",defaultValue = " ")long id){
-        Optional<Librairie>livre=librairieRepository.findById(id);
+        Optional<Librairie> livre = librairieRepository.findById(id);
         if(!livre.isPresent()) throw new LivreNotFoundException("Ce livre n'existe pas");
         return livre;
     }
@@ -148,9 +174,13 @@ public class LibrairieController {
      * @return
      */
     @PostMapping(value = "/librairies")
-    public ResponseEntity<Librairie>saveLivre(@RequestBody Librairie livre){
+    public ResponseEntity<Librairie>saveLivre(@RequestBody Librairie livre, BindingResult bindingResult){
+        if (bindingResult.hasErrors()){
+            return null;
+        }
+        livre.setPrereserveMax(livre.getNExemplaire()*2);
+        livre.setPrereserve(0);
         Librairie saveLivre = librairieRepository.save(livre);
-        if(saveLivre == null) throw new ImpossibleAjouterUnLivreException("Impossible d'ajouter ce livre");
 
         return new ResponseEntity<Librairie>(saveLivre, HttpStatus.CREATED);
     }
@@ -209,6 +239,19 @@ public class LibrairieController {
         livreRepository.save(livreReserve);
     }
 
+    @GetMapping(value = "/ChercheLocation")
+    public Boolean chercheLocation(@RequestParam(name = "num") long num,
+                                   @RequestParam(name = "idLivre") long idLivre) {
+        List<LivreReserve> livresLocation = livreRepository.findByIdClient(num);
+
+        for (LivreReserve livreReserve : livresLocation) {
+
+            if (livreReserve.getLibrairie().getId().equals(recupererUnLivre(idLivre))) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Enregistrer la reservation d'un livre
@@ -219,9 +262,19 @@ public class LibrairieController {
 
     @PostMapping(value ="saveReservation/{idLivre}/{idUser}" )
     public LivreReserve saveReservation(@RequestBody LivreReserve livreReserve, @PathVariable("idLivre") Long idLivre,
-                                        @PathVariable("idUser") Long idUser)
-    {
+                                        @PathVariable("idUser") Long idUser) {
+
+
         Librairie livre= recupererUnLivre(idLivre).get();
+
+        List<LivreReserveAttente> listAttente=livreAttenteIdLivre(idLivre);
+
+       for (LivreReserveAttente livreAttente : listAttente ){
+        if (livreAttente.getIdClient().equals(idUser)&livreAttente.getMailEnvoye() ){
+            deletePreReservation(livreAttente.getId());
+            livre.setNExemplaire(livre.getNExemplaire()+1);
+        }}
+
         if (livre.getNExemplaire()<=0)throw new ImpossibleAjouterUneReservationException("Ce livre n'est plus" +
                 " disponible");
 
@@ -230,17 +283,26 @@ public class LibrairieController {
         cal.setTime(dateJour);
         cal.add(Calendar.MONTH,1);
 
+
+        List<LivreReserveAttente>list2=livreAttenteClient(idUser);
+        for (LivreReserveAttente livreReserveAttente : list2) {
+            if (livreReserveAttente.getLibrairie().equals(livre)) {
+                deletePreReservation(livreReserveAttente.getId());
+            }
+        }
+
+
         List<UserReservation> list=userReservationDao.findAll();
         boolean userinscrit = false;
 
-        for (int i =0; i < list.size(); i++){
-            UserReservation userlist=list.get(i);
-
-            if (userlist.getIdClient().compareTo(idUser)==0){
-                userinscrit=true;
+        for (UserReservation userlist : list) {
+            if (userlist.getIdClient().compareTo(idUser) == 0) {
+                userinscrit = true;
+                break;
             }
         }
-        if (userinscrit==false){
+
+        if (!userinscrit){
             UserReservation userReservation=new UserReservation();
             userReservation.setIdClient(idUser);
             userReservationDao.save(userReservation);
@@ -254,12 +316,12 @@ public class LibrairieController {
         livreReserve.setProlongation(false);
         livreReserve.setUserReservation(userReservation);
         livre.setNExemplaire(livre.getNExemplaire()-1);
-
         userReservation.setNbLivre(userReservation.getNbLivre()+1);
 
         return livreRepository.save(livreReserve);
 
     }
+
 
     /**
      * Supprimer la resevation d'un livre
@@ -267,26 +329,214 @@ public class LibrairieController {
      */
     @DeleteMapping (value ="deleteReservation/{id}" )
     public void deleteReservation(@PathVariable("id") Long id) {
-
         LivreReserve livreReserves=livreRepository.findById(id).get();
-        Librairie livre= recupererUnLivre(livreReserves.getLibrairie().getId()).get();
-        livre.setNExemplaire(livre.getNExemplaire()+1);
+        Librairie livre=librairieRepository.findById(livreReserves.getLibrairie().getId()).get();
+        //on fait -1 au nombre de livre que le client à en sa possession
         livreReserves.getUserReservation().setNbLivre(livreReserves.getUserReservation().getNbLivre()-1);
-        livreRepository.deleteById(id);
+       List<LivreReserveAttente>list=livreReserveAttenteDao.findAll();
+       if(list.size()>0){
+        mail(livreReserves.getLibrairie().getId());
+       }else {
+           livre.setNExemplaire(livre.getNExemplaire()+1);
+           librairieRepository.save(livre);
 
+       }
+        //on supprime le livre de la liste des livres loués
+        livreRepository.deleteById(id);
+        // si le client à plus de livre reservé on le supprime de la
+        // liste des clients qui ont un livre en leurs possession.
         if (livreReserves.getUserReservation().getNbLivre()==0){
             userReservationDao.delete(livreReserves.getUserReservation());
         }
     }
 
+    private void mail(@PathVariable("id") Long id) {
+
+        Librairie livre= recupererUnLivre(id).get();
+        List<LivreReserveAttente> list=livreReserveAttenteDao.findAll();
+
+        Date dateJour= new Date();
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(dateJour);
+        cal.add(Calendar.HOUR,48);
+
+        for (LivreReserveAttente reserveAttente : list) {
+            if (reserveAttente.getLibrairie().equals(livre) & reserveAttente.getNlistAttente() == 1) {
+                reserveAttente.setDateMail(cal.getTime());
+                sendEmail(reserveAttente.getId());
+                reserveAttente.setMailEnvoye(true);
+                livreReserveAttenteDao.save(reserveAttente);
+            }
+        }
+    }
 
 
+    @PostMapping(value ="savePreReservation/{idLivre}" )
+    public LivreReserveAttente savePreReservation( @PathVariable("idLivre") Long idLivre,
+                                                   @RequestParam(name ="idUser") Long idUser
+                                                   ) {
+
+        LivreReserveAttente livreReserveAttente=new LivreReserveAttente();
+        Librairie livre=recupererUnLivre(idLivre).get();
+      if (livreReserveClient(idUser, idLivre)){
+          return null;
+      }
+
+        livreReserveAttente.setIdClient(idUser);
+        livreReserveAttente.setLibrairie(livre);
+        livreReserveAttente.setMailEnvoye(false);
+        livreReserveAttente.setDateRetour(dateLocationMax(idLivre));
+        livreReserveAttente.setNlistAttente(livre.getPrereserve()+1);
+        livre.setPrereserve(livre.getPrereserve()+1);
+
+        return livreReserveAttenteDao.save(livreReserveAttente);
+
+    }
+
+    public Boolean livreReserveClient(long idClient, long idLivre){
+        Librairie livre=recupererUnLivre(idLivre).get();
+
+        List<LivreReserveAttente>list=livreAttenteClient(idClient);
+        Boolean livrereserveAttente=false;
+        Boolean livrereserve =false;
+        for (LivreReserveAttente reserveAttente : list) {
+            if (reserveAttente.getLibrairie().equals(livre)) {
+                return livrereserveAttente=true;
+            }
+        }
+        List<LivreReserve> listLivreReserve=findByLocation(idClient);
+        for (LivreReserve livreReserve : listLivreReserve) {
+            if (livreReserve.getLibrairie().equals(livre)) {
+                return livrereserve=true;
+            }
+        }
+
+        return livrereserve || livrereserveAttente;
+
+    }
+
+    /**
+     * Supprimer la Pre-resevation d'un livre
+     * @param id da la Pre-reservation.
+     */
+    @DeleteMapping (value ="deletePreReservation/{id}" )
+    public void deletePreReservation(@PathVariable("id") Long id) {
+        LivreReserveAttente livreReserveAttente=livreAttente(id).get();
+        livreReserveAttente.getLibrairie().setPrereserve(livreReserveAttente.getLibrairie().getPrereserve()-1);
+
+       if(livreReserveAttente.getMailEnvoye()){
+           Librairie livre=librairieRepository.findById(livreReserveAttente.getLibrairie().getId()).get();
+           livreReserveAttente(id);
+
+           List<LivreReserveAttente> list=livreReserveAttenteDao.findAll();
+           if ((list.size()==0)){
+               livre.setNExemplaire(livre.getNExemplaire()+1);
+               librairieRepository.save(livre);
+           }
+           for (LivreReserveAttente attenteList : list) {
+               if(!attenteList.getLibrairie().equals(livreReserveAttente.getLibrairie())){
+                   livre.setNExemplaire(livre.getNExemplaire()+1);
+                   librairieRepository.save(livre);
+               }
+           }
+       }else {
+        livreReserveAttente(id);
+       }
+    }
+
+    private void livreReserveAttente(@PathVariable("id") Long id) {
+        LivreReserveAttente livreReserveAttente=livreAttente(id).get();
+        List<LivreReserveAttente> list=livreReserveAttenteDao.findAll();
+        livreReserveAttenteDao.delete(livreReserveAttente);
+        for (LivreReserveAttente attenteList : list) {
+            if (attenteList.getLibrairie().equals(livreReserveAttente.getLibrairie()) &
+                    livreReserveAttente.getNlistAttente() < attenteList.getNlistAttente()) {
+                attenteList.setNlistAttente(attenteList.getNlistAttente() - 1);
+                livreReserveAttenteDao.save(attenteList);
+                mail(livreReserveAttente.getLibrairie().getId());
+            }
+        }
+    }
 
 
+    /**
+     * Rechercher un livre qui est en attente  par son Id.
+     * @param id  livre
+     */
+
+    @GetMapping(value = "/livreAttente")
+    public Optional<LivreReserveAttente>livreAttente(@RequestParam(name="id",defaultValue = " ")long id){
+
+        Optional<LivreReserveAttente>livre=livreReserveAttenteDao.findById(id);
+        if(!livre.isPresent()) throw new LivreNotFoundException("Ce livre n'existe pas");
+        return livre;
+    }
+
+    @GetMapping(value = "/livreAttenteIdLivre")
+    public List<LivreReserveAttente>livreAttenteIdLivre(@RequestParam(name="id",defaultValue = " ")long id){
+        List<LivreReserveAttente>livre=livreReserveAttenteDao.findByLibrairie_Id(id);
+        return livre;
+    }
+
+    /**
+     * recherche des livres en location par utilisateur
+     * @param num
+     * @return
+     */
+    @GetMapping(value = "/livreAttenteClient")
+    public List<LivreReserveAttente> livreAttenteClient(@RequestParam(name = "num") long num){
+        return livreReserveAttenteDao.findByIdClient(num);
+    }
+
+    @GetMapping(value = "/livreAttenteAll")
+    public List<LivreReserveAttente> livreAttenteAll(){
+        return livreReserveAttenteDao.findAll();
+    }
 
 
+    private void sendEmail(long idReservation) {
 
+        SimpleDateFormat formater = null;
+        Date dateJour= new Date();
+        formater = new SimpleDateFormat("'le' dd/MM/yyyy");
+        Optional<LivreReserveAttente> livreReserveAttenteList=livreReserveAttenteDao.findById(idReservation);
+       UserBean client=userProxy.findById(livreReserveAttenteList.get().getIdClient()).get();
 
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setTo(client.getEmail());
 
+        msg.setSubject("Bibliothèque de Tours - Courrier de rappel");
+        msg.setText("Bibliothèque Municipale de Tours\n" +
+                "    2bis AV. ANDRE MALRAUX\n" +
+                "    37042 TOURS CEDEX\n" +
+                "    02 47 05 47 33\n" +
+                "    secretariat@bm-tours.fr\n" +
+                "\n" +
+                "\n" +
+                "                                                  M. "+" "+ client.getNom()+" "
+                + client.getPrenom()+"\n" +
+                "\n" +
+                "                                                  Tours," +formater.format(dateJour)+"\n" +
+                "\n" +
+                "\n" +
+                "\n" +
+                "    Madame, Monsieur, \n" +
+                "\n" +
+                "    Nous sommes heureux de vous informé que le livre que vous avez reservé est diponible \n" +
+                "    à l'accueil de votre bibliothéque.\n"+
+                "\n" +
+                "    Merci de recuperer sans tarder le "+livreReserveAttenteList.get().getLibrairie().getGenre().getGenre()+" " +
+                " qui a pour titre "+ livreReserveAttenteList.get().getLibrairie().getTitre()+".\n" +
+                "\n" +
+                "    Vous avez 48 heures pour le recuper faute de quoi votre reservation sera  annulée \n" +
+                "\n" +
+                "    Comptant sur votre réativité et restant à votre disposition pour tout renseignement relatif\n" +
+                "      disposition pour tout renseignement relatif aux prêts, je vous prie d'agréer mes\n" +
+                "      sincères salutations.\n" +
+                "\n" +
+                "                                        La Directrice de la Bibliothèque.\n" +
+                "\n" +
+                "\n");
+        javaMailSender.send(msg);}
 
 }

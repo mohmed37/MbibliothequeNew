@@ -117,6 +117,7 @@
                 <th>Date de restitution</th>
                 <th>Prolongation</th>
 
+
             </tr>
             </thead>
             <tbody>
@@ -125,15 +126,53 @@
                 <td th:text="${livrelocation.getLibrairie().titre}"></td>
                 <td th:text="${livrelocation.getDateCreatedString(livrelocation.dateDeb)}" ></td>
                 <td th:text="${livrelocation.getDateCreatedString(livrelocation.dateFin)}"></td>
+              
                 <!--Ajout d'une condition si la prolongation à dejà été réalisé ou que la date est dépasée  -->
-                <td><a  th:if="${dateJour.before(livrelocation.dateFin) && livrelocation.getProlongation()==false} "
-                    th:href="@{prolongation(id=${livrelocation.id})}">Prolongation</a></td>
+                <td th:if="${dateJour.before(livrelocation.dateFin) && livrelocation.getProlongation()==false} ">
+                  
+                <form th:action="@{prolongation/{id}(id=${livrelocation.id})}" method="get">
+                    <button class="btn btn-success" type="submit" >Prolongation</button>
+                </form>
+                </td>          
+
             </tr>
 
             </tbody>
 
         </table>
     </div>
+    </div><br>
+    <div class="container">
+        <div class="row">
+            <h2>Liste des réservations</h2></br>
+            <table class="table table-striped">
+                <thead class="thead-light">
+                <tr>
+                    <th>Titre</th>
+                    <th>Date de retour prévue </th>
+                    <th>Position dans la liste d'attente</th>
+                    <th>Annuler la réservation</th>
+
+
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="livreAttente : ${livreAttentes}" class="col-xs-12 col-sm-12 col-md-6 col-lg-6 col-xs-offset-0 col-sm-offset-0 col-md-offset-3 col-lg-offset-3 toppad">
+
+                    <td th:text="${livreAttente.getLibrairie().titre}"></td>
+                    <td th:text="${livreAttente.getDateCreatedString(livreAttente.getDateRetour())}" ></td>
+                    <td th:text="${livreAttente.getNlistAttente()}"></td>
+                    <td>
+                    <form th:action="@{/delete/{id}(id=${livreAttente.id})}" method="get">
+                        <button onclick="return confirm('Etes vous sures de vouloir supprimer votre reservation?')" class="btn btn-danger" type="submit" >Annuler</button>
+                    </form>
+                  </td>
+                </tr>
+                </tbody>
+
+            </table>
+        </div>
+
 </div></br>
 <div th:insert="footer.html :: footer"></div>
 </body>

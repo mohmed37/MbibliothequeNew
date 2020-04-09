@@ -25,4 +25,23 @@ public class Genre implements Serializable {
 
     @Column(name = "genre")
     String genre;
+
+    public Genre(Builder builder) {
+        this.id=builder.id;
+        this.genre=builder.genre;
+    }
+
+    public static class Builder{
+        int id;
+        String genre;
+        public Genre.Builder id(Integer id){
+            this.id= id;
+            return this;}
+        public Genre.Builder genre(String genre){
+            this.genre=genre;
+            return this;}
+        public Genre build(){
+            return new Genre(this);
+        }
+    }
 }

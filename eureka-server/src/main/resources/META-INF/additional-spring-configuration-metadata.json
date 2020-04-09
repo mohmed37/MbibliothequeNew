@@ -1,0 +1,8 @@
+{
+  "properties": [
+    {
+      "name": "loggin.level.com.netflix.eureka.registry",
+      "type": "java.lang.String",
+      "description": "Description for loggin.level.com.netflix.eureka.registry."
+  }
+] }

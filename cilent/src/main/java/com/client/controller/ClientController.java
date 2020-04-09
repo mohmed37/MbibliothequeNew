@@ -1,10 +1,7 @@
 package com.client.controller;
 
 
-import com.client.bean.GenreBean;
-import com.client.bean.LibrairieBean;
-import com.client.bean.LivreReserveBean;
-import com.client.bean.UserBean;
+import com.client.bean.*;
 import com.client.proxies.MlibrairieProxy;
 import com.client.proxies.MuserProxy;
 import com.client.service.IUserService;
@@ -14,16 +11,24 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -43,6 +48,7 @@ public class ClientController {
     private String imageDir;
 
     Logger log = LoggerFactory.getLogger(this.getClass());
+    private Model model;
 
     /**
      * page d'accueil
@@ -54,7 +60,7 @@ public class ClientController {
                           @RequestParam(name = "motClefTitre",defaultValue ="") String motClefTitre
             ,@RequestParam(name="page",defaultValue = "0")int page,
                           @RequestParam(name="size",defaultValue = "8")int size) {
-        log.info("Envoi requête vers microservice-librairie");
+        log.info("Envoi requête vers microservice-produits");
         LibraryResponse pageLivres = mlibrairieProxy.listDesLivres( motClefAuteur,motClefTitre,page,size);
         int pagesCount1=pageLivres.getContent().size();
         int[]pages=new int[pagesCount1];
@@ -64,6 +70,7 @@ public class ClientController {
         model.addAttribute("pageCourant",page);
         List<GenreBean>genres=mlibrairieProxy.genreLivreAll();
         model.addAttribute("genres",genres);
+
         return "Accueil";
     }
 
@@ -78,6 +85,7 @@ public class ClientController {
         model.addAttribute("pageLivres", pageLivres);
         List<GenreBean>genres=mlibrairieProxy.genreLivreAll();
         model.addAttribute("genres",genres);
+
         return "Accueil";
     }
 
@@ -90,6 +98,17 @@ public class ClientController {
         return "login";
     }
 
+    @RequestMapping(value="/logout", method = RequestMethod.GET)
+    public String logoutPage (HttpServletRequest request, HttpServletResponse response) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null){
+            new SecurityContextLogoutHandler().logout(request, response, auth);
+        }
+        return "redirect:/";
+    }
+
+
+
     /**
      * @param id rechercher un livre par son Id.
      */
@@ -98,7 +117,13 @@ public class ClientController {
     public String detailLivre(Model model,@RequestParam(name="id",defaultValue = " ")long id){
         LibrairieBean detailLivre = mlibrairieProxy.recupererUnLivre(id);
         model.addAttribute("detailLivre",detailLivre);
+        Date dateRetour=mlibrairieProxy.DateLocationMax(id);
+        model.addAttribute("dateRetour",dateRetour);
+        UserBean userConnec=userService.getUserConnec();
+        model.addAttribute("userConnect",userConnec);
         return "detailLivre";
+
+
     }
 
 
@@ -114,6 +139,8 @@ public class ClientController {
 
         List<LivreReserveBean> livresLocation = mlibrairieProxy.findByLocation(userConnec.getNum());
         model.addAttribute("livresLocation", livresLocation);
+        List<LivreReserveAttenteBean> livreReserveAttenteBeanList=mlibrairieProxy.livreAttenteClient(userConnec.getNum());
+        model.addAttribute("livreAttentes",livreReserveAttenteBeanList);
 
         Date dateJour=new Date();
         model.addAttribute("dateJour",dateJour);
@@ -144,8 +171,10 @@ public class ClientController {
 
     @RequestMapping("/save")
     public String saveLivre(@Valid @ModelAttribute("livre")LibrairieBean livre,
-                            @RequestParam(name = "picture") MultipartFile file,@RequestParam("iDgenre") int iDgenre) throws IOException {
-
+                            @RequestParam(name = "picture") MultipartFile file, @RequestParam("iDgenre") int iDgenre, BindingResult bindingResult) throws IOException {
+        if (bindingResult.hasErrors()){
+            return "formLivre";
+        }
         livre.setGenre(mlibrairieProxy.GenreLivre(iDgenre).get());
 
         livre = mlibrairieProxy.saveLivre(livre);
@@ -182,10 +211,24 @@ public class ClientController {
      * @param id
 
      */
-    @RequestMapping(value = "/prolongation")
-    public String prolongation(long id){
+    @RequestMapping(value = "/prolongation/{id}")
+    public String prolongation(@PathVariable("id") long id){
         mlibrairieProxy.prolongation(id);
 
+        return "redirect:/userLocation";
+    }
+
+    @RequestMapping(value ="/reservation/{idLivre}")
+    public String reservation(@PathVariable("idLivre") long idLivre){
+        UserBean idUser=userService.getUserConnec();
+        mlibrairieProxy.savePreReservation(idLivre,idUser.getNum());
+
+        return "redirect:/detailLivre?id="+idLivre;
+    }
+
+    @RequestMapping("/delete/{id}")
+    public String deleteUser(@PathVariable("id") long id) {
+        mlibrairieProxy.deletePreReservation(id);
         return "redirect:/userLocation";
     }
 

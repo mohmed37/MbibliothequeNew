@@ -70,20 +70,18 @@
                     </li>
                 </div>
                 <li class="navbar-right">
-                    <button class="btn btn-danger" onclick="window.location.href='login'; return false;">Me connecter</button>
-                </li>
-
-            </ul>
-
+                <button th:if="!${#httpServletRequest.remoteUser}" class="btn btn-success" onclick="window.location.href='login'; return false;">Me connecter</button>
+            </li>
+                <li class="navbar-right" th:if="${#httpServletRequest.remoteUser}">
+                    <form th:action="@{/logout}" method="post">
+                        <button class="btn btn-danger" type="submit" >Me déconnecter</button>
+                   </form>
             </ul>
         </div>
         <div style="background-color:#ffffff" >
             <img  th:src="@{getPhoto(id=100)}" class="img" style="width: 120px;" />
         </div>
     </nav>
-
 </div>
-
-
 </body>
 </html>
