@@ -256,10 +256,8 @@ public class LibrairieController {
 
     @PostMapping(value ="saveReservation/{idLivre}/{idUser}" )
     public LivreReserve saveReservation(@RequestBody LivreReserve livreReserve, @PathVariable("idLivre") Long idLivre,
-                                        @PathVariable("idUser") Long idUser,BindingResult bindingResult) {
-        if(bindingResult.hasErrors()){
-            return null;
-        }
+                                        @PathVariable("idUser") Long idUser) {
+
 
         Librairie livre= recupererUnLivre(idLivre).get();
 
