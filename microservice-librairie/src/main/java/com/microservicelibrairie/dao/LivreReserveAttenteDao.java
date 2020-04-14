@@ -7,10 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-public interface LivreReserveAttenteDao extends JpaRepository<LivreReserveAttente,Integer> {
-    Optional<LivreReserveAttente> findById(Long id);
+public interface LivreReserveAttenteDao extends JpaRepository<LivreReserveAttente,Long> {
     List<LivreReserveAttente> findByIdClient(long id);
     List<LivreReserveAttente>findByLibrairie_Id(long id);
-
-
 }

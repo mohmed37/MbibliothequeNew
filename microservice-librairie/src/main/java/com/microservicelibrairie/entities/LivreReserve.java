@@ -14,7 +14,6 @@ import java.util.Date;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @ToString
 
 public class LivreReserve implements Serializable {
@@ -44,7 +43,7 @@ public class LivreReserve implements Serializable {
     @JoinColumn(name = "livre_id")
     Librairie librairie;
 
-    public LivreReserve(Builder builder) {
+    private LivreReserve(Builder builder) {
         this.id=builder.id;
         this.idClient=builder.idClient;
         this.prolongation=builder.prolongation;

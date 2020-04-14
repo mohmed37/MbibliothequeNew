@@ -9,6 +9,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "genre")
@@ -26,7 +28,8 @@ public class Genre implements Serializable {
     @Column(name = "genre")
     String genre;
 
-    public Genre(Builder builder) {
+
+    private Genre(Builder builder) {
         this.id=builder.id;
         this.genre=builder.genre;
     }

@@ -6,7 +6,6 @@ import java.util.List;
 
 public interface LivreRepository  extends JpaRepository<LivreReserve,Long> {
 List<LivreReserve>findByIdClient(long id);
-List<LivreReserve>findById(long id);
 List<LivreReserve>findByLibrairie_Id(long id);
 
 }

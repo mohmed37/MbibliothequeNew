@@ -1,9 +1,6 @@
 package com.microservicelibrairie.entities;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.Range;
 
@@ -17,6 +14,7 @@ import java.io.Serializable;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 
 public class UserReservation implements Serializable {
     @Id
@@ -34,15 +32,6 @@ public class UserReservation implements Serializable {
         this.nbLivre=builder.nbLivre;
     }
 
-
-    @Override
-    public String toString() {
-        final StringBuffer sb = new StringBuffer("UserReservation{");
-        sb.append("id=").append(id);
-        sb.append(", idClient=").append(idClient);
-        sb.append('}');
-        return sb.toString();
-    }
 
     public static class Builder{
         Long id;

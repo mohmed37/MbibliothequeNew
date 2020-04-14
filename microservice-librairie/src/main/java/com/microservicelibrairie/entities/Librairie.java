@@ -12,10 +12,10 @@ import java.io.Serializable;
 @Entity
 @Table(name = "librairie")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Data
+@Setter
+@Getter
 @NoArgsConstructor
-@AllArgsConstructor
-@ToString
+
 
 public class Librairie implements Serializable {
 
@@ -52,7 +52,7 @@ public class Librairie implements Serializable {
     @JoinColumn(name = "genre_id")
     Genre genre;
 
-    public Librairie(Builder builder) {
+    private Librairie(Builder builder) {
         this.id=builder.id;
         this.titre=builder.titre;
         this.auteur=builder.auteur;
