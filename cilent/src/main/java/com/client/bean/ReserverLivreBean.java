@@ -7,9 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.format.annotation.DateTimeFormat;
 
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -19,24 +18,27 @@ import java.util.Date;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 
-public class LivreReserveBean {
+public class ReserverLivreBean {
 
     Long id;
     Long idClient;
-    Boolean prolongation=false;
+    Integer nlistAttente;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    Date dateDeb;
+    Date dateRetour;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    Date dateFin;
+    Date dateMail;
+    Boolean mailEnvoye;
+
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "livre_id")
+    LibrairieBean librairie;
+
 
     public String getDateCreatedString(Date date) {
         DateFormat df = new SimpleDateFormat("dd/MM/yyyy");
         return df.format(date);
     }
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "livre_id")
-    LibrairieBean librairie;
 
 
 }

@@ -16,7 +16,7 @@ import java.util.Date;
 @NoArgsConstructor
 @ToString
 
-public class LivreReserve implements Serializable {
+public class Emprunt implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,7 +43,7 @@ public class LivreReserve implements Serializable {
     @JoinColumn(name = "livre_id")
     Librairie librairie;
 
-    private LivreReserve(Builder builder) {
+    private Emprunt(Builder builder) {
         this.id=builder.id;
         this.idClient=builder.idClient;
         this.prolongation=builder.prolongation;
@@ -63,31 +63,31 @@ public class LivreReserve implements Serializable {
         UserReservation userReservation;
         Librairie librairie;
 
-        public LivreReserve.Builder id(Long id){
+        public Emprunt.Builder id(Long id){
             this.id= id;
             return this;}
-        public LivreReserve.Builder idClient(Long idClient){
+        public Emprunt.Builder idClient(Long idClient){
             this.idClient= idClient;
             return this;}
-        public LivreReserve.Builder prolongation(Boolean prolongation){
+        public Emprunt.Builder prolongation(Boolean prolongation){
             this.prolongation= prolongation;
             return this;}
-        public LivreReserve.Builder dateFin(Date dateFin){
+        public Emprunt.Builder dateFin(Date dateFin){
             this.dateFin= dateFin;
             return this;}
-        public LivreReserve.Builder dateDeb(Date dateDeb){
+        public Emprunt.Builder dateDeb(Date dateDeb){
             this.dateDeb= dateDeb;
             return this;}
-        public LivreReserve.Builder userReservation(UserReservation userReservation){
+        public Emprunt.Builder userReservation(UserReservation userReservation){
             this.userReservation= userReservation;
             return this;}
-        public LivreReserve.Builder librairie(Librairie librairie){
+        public Emprunt.Builder librairie(Librairie librairie){
             this.librairie= librairie;
             return this;}
 
 
-        public LivreReserve build(){
-            return new LivreReserve(this);
+        public Emprunt build(){
+            return new Emprunt(this);
         }
 
 
