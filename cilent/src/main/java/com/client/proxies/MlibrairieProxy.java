@@ -29,6 +29,11 @@ public interface MlibrairieProxy {
  @GetMapping(value = "/locationId")
  Optional<LivreReserveBean> findByLocationId(@RequestParam(name = "id") long id);
 
+ @PostMapping(value ="/microservice-librairie/saveReservation/{idLivre}/{idUser}" )
+ LivreReserveBean saveReservation(@PathVariable("idLivre") Long idLivre,
+                                     @PathVariable("idUser") Long idUser);
+
+
  @GetMapping(value = "/microservice-librairie/locationDteMax")
  Date DateLocationMax(@RequestParam(name = "id") long id);
 

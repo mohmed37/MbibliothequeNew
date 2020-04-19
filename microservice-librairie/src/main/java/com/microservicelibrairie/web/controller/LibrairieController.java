@@ -92,6 +92,14 @@ public class LibrairieController {
         return livreRepository.findByIdClient(num);
     }
 
+    @GetMapping(value = "/locationId/{id}")
+    public Optional<LivreReserve>locationId(@PathVariable("id") long id){
+        Optional<LivreReserve>empreint=livreRepository.findById(id);
+        if(!empreint.isPresent()) throw new GenreNotFoundException("Ce numéro d'empreint n'existe pas");
+        return empreint;
+    }
+
+
     @GetMapping(value = "/locationDteMax")
     public Date dateLocationMax(@RequestParam(name = "id") long id){
         List<LivreReserve> livresLocation=livreRepository.findByLibrairie_Id(id) ;
@@ -119,6 +127,7 @@ public class LibrairieController {
      */
     @GetMapping(value = "/genre")
     public List<Librairie> findByGenre(  @RequestParam(name = "genre",defaultValue =" " )String genre){
+
 
         return librairieRepository.findByGenre_Genre(genre);
 
@@ -255,17 +264,18 @@ public class LibrairieController {
 
     /**
      * Enregistrer la reservation d'un livre
-     * @param livreReserve
      * @param idLivre id du livre
      * @param idUser id de l'utilisateur
      */
 
-    @PostMapping(value ="saveReservation/{idLivre}/{idUser}" )
-    public LivreReserve saveReservation(@RequestBody LivreReserve livreReserve, @PathVariable("idLivre") Long idLivre,
+    @PostMapping(value ="/saveReservation/{idLivre}/{idUser}" )
+    public LivreReserve saveReservation(@PathVariable("idLivre") Long idLivre,
                                         @PathVariable("idUser") Long idUser) {
 
-
+        LivreReserve livreReserve=new LivreReserve();
         Librairie livre= recupererUnLivre(idLivre).get();
+
+
 
         List<LivreReserveAttente> listAttente=livreAttenteIdLivre(idLivre);
 
@@ -378,6 +388,12 @@ public class LibrairieController {
 
         LivreReserveAttente livreReserveAttente=new LivreReserveAttente();
         Librairie livre=recupererUnLivre(idLivre).get();
+
+        if (livre.getNExemplaire()>0)throw new ImpossibleAjouterUneReservationException("Ce livre est disponible " +
+                "impossible de faire une préréservation");
+        if (livre.getPrereserveMax()<=livre.getPrereserve())throw new ImpossibleAjouterUneReservationException("Impossble" +
+                " de faire une réservation le Maximum est atteint");
+
       if (livreReserveClient(idUser, idLivre)){
           return null;
       }
@@ -446,14 +462,14 @@ public class LibrairieController {
 
     private void livreReserveAttente(@PathVariable("id") Long id) {
         LivreReserveAttente livreReserveAttente=livreAttente(id).get();
-        List<LivreReserveAttente> list=livreReserveAttenteDao.findAll();
         livreReserveAttenteDao.delete(livreReserveAttente);
+        List<LivreReserveAttente> list=livreReserveAttenteDao.findByLibrairie_Id(livreReserveAttente.getLibrairie().getId());
         for (LivreReserveAttente attenteList : list) {
-            if (attenteList.getLibrairie().equals(livreReserveAttente.getLibrairie()) &
-                    livreReserveAttente.getNlistAttente() < attenteList.getNlistAttente()) {
+            if (livreReserveAttente.getNlistAttente() < attenteList.getNlistAttente()) {
                 attenteList.setNlistAttente(attenteList.getNlistAttente() - 1);
                 livreReserveAttenteDao.save(attenteList);
-                mail(livreReserveAttente.getLibrairie().getId());
+                if(list.size()>1){
+                mail(livreReserveAttente.getLibrairie().getId());}
             }
         }
     }

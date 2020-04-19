@@ -182,6 +182,8 @@ public class ClientController {
             livre.setPhoto(file.getOriginalFilename());
             file.transferTo(new File(imageDir+livre.getId()));
         }
+        livre.setPrereserveMax(livre.getNExemplaire()*2);
+        livre.setPrereserve(0);
         mlibrairieProxy.saveLivre(livre);
         return "redirect:/form";
 
@@ -222,6 +224,7 @@ public class ClientController {
     public String reservation(@PathVariable("idLivre") long idLivre){
         UserBean idUser=userService.getUserConnec();
         mlibrairieProxy.savePreReservation(idLivre,idUser.getNum());
+
 
         return "redirect:/detailLivre?id="+idLivre;
     }
