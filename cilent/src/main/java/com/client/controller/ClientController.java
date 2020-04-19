@@ -209,7 +209,6 @@ public class ClientController {
     /**
      * prolonger le livre de 4 semaines avec son Id.
      * @param id
-
      */
     @RequestMapping(value = "/prolongation/{id}")
     public String prolongation(@PathVariable("id") long id){
@@ -222,7 +221,6 @@ public class ClientController {
     public String reservation(@PathVariable("idLivre") long idLivre){
         UserBean idUser=userService.getUserConnec();
         mlibrairieProxy.savePreReservation(idLivre,idUser.getNum());
-
 
         return "redirect:/detailLivre?id="+idLivre;
     }

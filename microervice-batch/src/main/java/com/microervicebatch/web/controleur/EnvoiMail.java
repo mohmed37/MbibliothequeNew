@@ -124,6 +124,9 @@ public class EnvoiMail {
         return chaineAfficher;
     }
 
+    /**
+     * envoi du mail pour les reserevation  en automatique.
+     */
 
     @Scheduled(cron = "0 2 12 * * * ")
     public void expiration48H() {

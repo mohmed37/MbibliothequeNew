@@ -25,6 +25,15 @@ public class UserController {
         Optional<AppUser> appUsers = appUserRepository.findById(id);
         return appUsers;
     }
+    @PostMapping(value ="/saveUser")
+    public AppUser saveUser(AppUser appUser){
+        return appUserRepository.save(appUser);
+    }
+
+    @DeleteMapping(value = "/deleteUser")
+    public void deleteUser(@PathVariable("id") Long id){
+        appUserRepository.delete(findById(id).get());
+    }
 
     /**
      * Enregistrer un utilisateur
