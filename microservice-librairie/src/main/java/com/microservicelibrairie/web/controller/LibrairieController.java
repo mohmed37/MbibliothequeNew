@@ -360,8 +360,8 @@ public class LibrairieController {
         Emprunt prolongation= emprunterRepository.findById(id).get();
 
         //J'ai mis une exception pour une erreur sur la demande de prolongation.
-        if(prolongation.getProlongation()) throw new RuntimeException("La prolongation à dejà était réalisée" +
-                " ou la date est dépassée");
+        if(prolongation.getProlongation()) throw new RuntimeException("La prolongation à dejà était réalisée");
+        if(prolongation.getDateFin().before(new Date())) throw new RuntimeException("Date de fin est dépassée");
 
         Calendar cal = Calendar.getInstance();
         cal.setTime(prolongation.getDateFin());
