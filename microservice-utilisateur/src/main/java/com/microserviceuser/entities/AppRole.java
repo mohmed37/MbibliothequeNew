@@ -23,4 +23,25 @@ public class AppRole implements Serializable {
     Long id;
 
     String role;
+
+    public AppRole(Builder builder) {
+        this.id=builder.id;
+        this.role=builder.role;
+    }
+
+    public static class Builder{
+        Long id;
+        String role;
+
+        public AppRole.Builder id(Long id){
+            this.id= id;
+            return this;}
+        public AppRole.Builder role(String role){
+            this.role= role;
+            return this;}
+        public AppRole build(){
+            return new AppRole(this);}
+    }
+
+
 }

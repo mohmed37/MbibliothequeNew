@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -26,7 +25,8 @@ public class Genre implements Serializable {
     @Column(name = "genre")
     String genre;
 
-    public Genre(Builder builder) {
+
+    private Genre(Builder builder) {
         this.id=builder.id;
         this.genre=builder.genre;
     }

@@ -27,8 +27,6 @@ import javax.validation.Valid;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -117,7 +115,7 @@ public class ClientController {
     public String detailLivre(Model model,@RequestParam(name="id",defaultValue = " ")long id){
         LibrairieBean detailLivre = mlibrairieProxy.recupererUnLivre(id);
         model.addAttribute("detailLivre",detailLivre);
-        Date dateRetour=mlibrairieProxy.DateLocationMax(id);
+        Date dateRetour=mlibrairieProxy.empruntIdDteMax(id);
         model.addAttribute("dateRetour",dateRetour);
         UserBean userConnec=userService.getUserConnec();
         model.addAttribute("userConnect",userConnec);
@@ -137,10 +135,10 @@ public class ClientController {
         UserBean userConnec=userService.getUserConnec();
         model.addAttribute("userConnect", userConnec);
 
-        List<LivreReserveBean> livresLocation = mlibrairieProxy.findByLocation(userConnec.getNum());
+        List<EmprunterLivreBean> livresLocation = mlibrairieProxy.findByEmprunt(userConnec.getNum());
         model.addAttribute("livresLocation", livresLocation);
-        List<LivreReserveAttenteBean> livreReserveAttenteBeanList=mlibrairieProxy.livreAttenteClient(userConnec.getNum());
-        model.addAttribute("livreAttentes",livreReserveAttenteBeanList);
+        List<ReserverLivreBean> reserverLivreBeanList =mlibrairieProxy.livreReserverClient(userConnec.getNum());
+        model.addAttribute("livreAttentes", reserverLivreBeanList);
 
         Date dateJour=new Date();
         model.addAttribute("dateJour",dateJour);
@@ -182,6 +180,8 @@ public class ClientController {
             livre.setPhoto(file.getOriginalFilename());
             file.transferTo(new File(imageDir+livre.getId()));
         }
+        livre.setPrereserveMax(livre.getNExemplaire()*2);
+        livre.setPrereserve(0);
         mlibrairieProxy.saveLivre(livre);
         return "redirect:/form";
 
@@ -209,7 +209,6 @@ public class ClientController {
     /**
      * prolonger le livre de 4 semaines avec son Id.
      * @param id
-
      */
     @RequestMapping(value = "/prolongation/{id}")
     public String prolongation(@PathVariable("id") long id){
@@ -228,7 +227,7 @@ public class ClientController {
 
     @RequestMapping("/delete/{id}")
     public String deleteUser(@PathVariable("id") long id) {
-        mlibrairieProxy.deletePreReservation(id);
+        mlibrairieProxy.deleteReservation(id);
         return "redirect:/userLocation";
     }
 

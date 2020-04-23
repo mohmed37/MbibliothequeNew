@@ -4,8 +4,8 @@ package com.client.proxies;
 
 import com.client.bean.GenreBean;
 import com.client.bean.LibrairieBean;
-import com.client.bean.LivreReserveAttenteBean;
-import com.client.bean.LivreReserveBean;
+import com.client.bean.ReserverLivreBean;
+import com.client.bean.EmprunterLivreBean;
 import com.client.controller.LibraryResponse;
 import org.springframework.cloud.netflix.ribbon.RibbonClient;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -24,23 +24,28 @@ public interface MlibrairieProxy {
  @GetMapping(value = "/microservice-librairie/librairieAll")
  List<LibrairieBean> listDesLivresAll();
 
- @GetMapping(value = "/microservice-librairie/locationAll")
- List<LivreReserveBean> livreReservesAll();
- @GetMapping(value = "/locationId")
- Optional<LivreReserveBean> findByLocationId(@RequestParam(name = "id") long id);
+ @GetMapping(value = "/microservice-librairie/emprunterAll")
+ List<EmprunterLivreBean> emprunterAll();
+ @GetMapping(value = "/empruntId")
+ Optional<EmprunterLivreBean> empruntId(@RequestParam(name = "id") long id);
 
- @GetMapping(value = "/microservice-librairie/locationDteMax")
- Date DateLocationMax(@RequestParam(name = "id") long id);
+ @PostMapping(value ="/microservice-librairie/saveEmprunt/{idLivre}/{idUser}" )
+ EmprunterLivreBean saveEmprunt(@PathVariable("idLivre") Long idLivre,
+                                    @PathVariable("idUser") Long idUser);
+
+
+ @GetMapping(value = "/microservice-librairie/empruntIdDteMax")
+ Date empruntIdDteMax(@RequestParam(name = "id") long id);
 
 
  @PutMapping(value = "/microservice-librairie/prolongation")
  LibrairieBean prolongation(@RequestParam(name = "id") long id);
 
- @PutMapping(value = "/microservice-librairie/modifListeReserve")
- LivreReserveBean modifListeReserve(@RequestBody LivreReserveBean livreReserveBean);
+ @PutMapping(value = "/microservice-librairie/modifListEmprunts")
+ EmprunterLivreBean modifListEmprunts(@RequestBody EmprunterLivreBean emprunterLivreBean);
 
- @GetMapping(value = "/microservice-librairie/location")
- List<LivreReserveBean> findByLocation(@RequestParam(name = "num") long num);
+ @GetMapping(value = "/microservice-librairie/emprunt")
+ List<EmprunterLivreBean> findByEmprunt(@RequestParam(name = "num") long num);
 
  @GetMapping(value = "/microservice-librairie/librairie")
  LibrairieBean recupererUnLivre(@RequestParam(name="id",defaultValue = " ")long id);
@@ -77,18 +82,18 @@ public interface MlibrairieProxy {
  Optional<GenreBean> GenreLivre(@PathVariable("id") int id);
 
 
- @PostMapping(value ="/microservice-librairie/savePreReservation/{idLivre}" )
- LivreReserveAttenteBean savePreReservation(@PathVariable("idLivre") Long idLivre,
-                                            @RequestParam(name = "idUser") Long idUser);
+ @PostMapping(value ="/microservice-librairie/saveReservation/{idLivre}" )
+ ReserverLivreBean savePreReservation(@PathVariable("idLivre") Long idLivre,
+                                      @RequestParam(name = "idUser") Long idUser);
 
- @DeleteMapping (value ="/microservice-librairie/deletePreReservation/{id}" )
- LivreReserveAttenteBean deletePreReservation(@PathVariable("id") Long id);
+ @DeleteMapping (value ="/microservice-librairie/deleteReservation/{id}" )
+ ReserverLivreBean deleteReservation(@PathVariable("id") Long id);
 
- @GetMapping(value = "/microservice-librairie/livreAttente")
- Optional<LivreReserveAttenteBean>livreAttente(@RequestParam(name="id",defaultValue = " ")long id);
+ @GetMapping(value = "/microservice-librairie/livreReserve")
+ Optional<ReserverLivreBean>livreReserve(@RequestParam(name="id",defaultValue = " ")long id);
 
  @GetMapping(value = "/microservice-librairie/livreAttenteClient")
- List<LivreReserveAttenteBean> livreAttenteClient(@RequestParam(name = "num") long num);
+ List<ReserverLivreBean> livreReserverClient(@RequestParam(name = "num") long num);
 
 
 }
